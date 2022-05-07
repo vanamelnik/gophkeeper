@@ -29,7 +29,7 @@ type (
 		Cards     []CardItem
 	}
 
-	Item struct {
+	ItemHeader struct {
 		ItemID    uuid.UUID
 		Meta      MetaData
 		CreatedAt time.Time
@@ -37,22 +37,22 @@ type (
 	}
 
 	TextItem struct {
-		Item
+		ItemHeader
 		Text string
 	}
 
 	BinaryItem struct {
-		Item
+		ItemHeader
 		Binary []byte
 	}
 
 	PasswordItem struct {
-		Item
+		ItemHeader
 		Password string
 	}
 
 	CardItem struct {
-		Item
+		ItemHeader
 		Number         string
 		CardholderName string
 		Date           string

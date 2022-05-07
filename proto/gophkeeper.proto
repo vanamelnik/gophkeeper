@@ -7,6 +7,7 @@ package proto;
 option go_package="./proto";
 
 import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
 
 service gophkeeper {
     rpc SignUp(SignInData) returns (UserAuth);
@@ -16,7 +17,8 @@ service gophkeeper {
     // ChangePassword
     // DeleteUser
 
-    rpc StoreChanges(AccessToken) returns (Data);
+    rpc RegisterEvent(RegisterEventRequest) returns (google.protobuf.Empty);
+    rpc UpdateData(UpdateDataRequest) returns (Data);
 }
 
 message Password {
@@ -85,27 +87,28 @@ message SignInData {
     string user_password = 2;
 }
 
-message StorePasswordRequest {
-    AccessToken access_token = 1;
-    Password password = 2;
+message Event {
+    enum Operation {
+        CREATE = 0;
+        UPDATE = 1;
+        DELETE = 2;
+    }
+    google.protobuf.Timestamp timestamp = 1;
+    Operation operation = 2;
+    oneof item {
+        Password password = 3;
+        Blob blob = 4;
+        Text text = 5;
+        Card card = 6;
+    }
 }
 
-message StoreBlobRequest {
-    AccessToken access_token = 1;
-    Blob blob = 2;
+message UpdateDataRequest {
+    AccessToken token = 1;
+    uint64 version = 2;
 }
 
-message StoreTextRequest {
-    AccessToken access_token = 1;
-    Text text = 2;
-}
-
-message StoreCardRequest {
-    AccessToken access_token = 1;
-    Card card = 2;
-}
-
-message DeleteItemRequest {
-    AccessToken access_token = 1;
-    ItemID item_id = 2;
+message RegisterEventRequest {
+    AccessToken token = 1;
+    Event event = 2;
 }
