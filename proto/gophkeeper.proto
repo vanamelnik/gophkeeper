@@ -3,21 +3,20 @@
 */
 syntax="proto3";
 
+package proto;
 option go_package="./proto";
 
-package proto;
+import "google/protobuf/empty.proto";
 
 service gophkeeper {
     rpc SignUp(SignInData) returns (UserAuth);
     rpc LogIn(SignInData) returns (UserAuth);
-    rpc GetAccessToken(RefreshToken) returns (AccessToken);
+    rpc GetNewTokens(RefreshToken) returns (UserAuth);
+    // TODO:
+    // ChangePassword
+    // DeleteUser
 
-    rpc StorePassword(StorePasswordRequest) returns(ItemID);
-    rpc StoreBlob(StoreBlobRequest) returns (ItemID);
-    rpc StoreText(StoreTextRequest) returns (ItemID);
-    rpc StoreCard(StoreCardRequest) returns (ItemID);
-
-    rpc GetData(AccessToken) returns (Data);
+    rpc StoreChanges(AccessToken) returns (Data);
 }
 
 message Password {
@@ -56,6 +55,7 @@ message Data {
     repeated Blob blobs = 2;
     repeated Text texts = 3;
     repeated Card cards = 4;
+    uint64 version = 100;
 }
 
 message MetaData {
@@ -103,4 +103,9 @@ message StoreTextRequest {
 message StoreCardRequest {
     AccessToken access_token = 1;
     Card card = 2;
+}
+
+message DeleteItemRequest {
+    AccessToken access_token = 1;
+    ItemID item_id = 2;
 }

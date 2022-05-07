@@ -11,6 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -29,6 +30,7 @@ type GophkeeperClient interface {
 	StoreBlob(ctx context.Context, in *StoreBlobRequest, opts ...grpc.CallOption) (*ItemID, error)
 	StoreText(ctx context.Context, in *StoreTextRequest, opts ...grpc.CallOption) (*ItemID, error)
 	StoreCard(ctx context.Context, in *StoreCardRequest, opts ...grpc.CallOption) (*ItemID, error)
+	DeleteItem(ctx context.Context, in *DeleteItemRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetData(ctx context.Context, in *AccessToken, opts ...grpc.CallOption) (*Data, error)
 }
 
@@ -103,6 +105,15 @@ func (c *gophkeeperClient) StoreCard(ctx context.Context, in *StoreCardRequest, 
 	return out, nil
 }
 
+func (c *gophkeeperClient) DeleteItem(ctx context.Context, in *DeleteItemRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/proto.gophkeeper/DeleteItem", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *gophkeeperClient) GetData(ctx context.Context, in *AccessToken, opts ...grpc.CallOption) (*Data, error) {
 	out := new(Data)
 	err := c.cc.Invoke(ctx, "/proto.gophkeeper/GetData", in, out, opts...)
@@ -123,6 +134,7 @@ type GophkeeperServer interface {
 	StoreBlob(context.Context, *StoreBlobRequest) (*ItemID, error)
 	StoreText(context.Context, *StoreTextRequest) (*ItemID, error)
 	StoreCard(context.Context, *StoreCardRequest) (*ItemID, error)
+	DeleteItem(context.Context, *DeleteItemRequest) (*emptypb.Empty, error)
 	GetData(context.Context, *AccessToken) (*Data, error)
 	mustEmbedUnimplementedGophkeeperServer()
 }
@@ -151,6 +163,9 @@ func (UnimplementedGophkeeperServer) StoreText(context.Context, *StoreTextReques
 }
 func (UnimplementedGophkeeperServer) StoreCard(context.Context, *StoreCardRequest) (*ItemID, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StoreCard not implemented")
+}
+func (UnimplementedGophkeeperServer) DeleteItem(context.Context, *DeleteItemRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteItem not implemented")
 }
 func (UnimplementedGophkeeperServer) GetData(context.Context, *AccessToken) (*Data, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetData not implemented")
@@ -294,6 +309,24 @@ func _Gophkeeper_StoreCard_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Gophkeeper_DeleteItem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteItemRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GophkeeperServer).DeleteItem(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.gophkeeper/DeleteItem",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GophkeeperServer).DeleteItem(ctx, req.(*DeleteItemRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Gophkeeper_GetData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AccessToken)
 	if err := dec(in); err != nil {
@@ -346,6 +379,10 @@ var Gophkeeper_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "StoreCard",
 			Handler:    _Gophkeeper_StoreCard_Handler,
+		},
+		{
+			MethodName: "DeleteItem",
+			Handler:    _Gophkeeper_DeleteItem_Handler,
 		},
 		{
 			MethodName: "GetData",
