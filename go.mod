@@ -3,6 +3,7 @@ module github.com/vanamelnik/gophkeeper
 go 1.18
 
 require (
+	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/golang/protobuf v1.5.2
 	github.com/google/uuid v1.1.2
 	google.golang.org/grpc v1.46.0

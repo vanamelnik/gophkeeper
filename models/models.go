@@ -3,21 +3,24 @@ package models
 import (
 	"time"
 
+	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
 )
 
 type User struct {
-	ID           int
+	ID           uint
 	Login        string
 	PasswordHash string
 }
 
 type Session struct {
-	ID           int
-	UserID       int
+	ID           uint
+	UserID       uint
 	RefreshToken string
+	AccessToken  jwt.Token
 	LoginAt      time.Time
 	LogoutAt     time.Time
+	DataVersion  uint64
 }
 
 type (
