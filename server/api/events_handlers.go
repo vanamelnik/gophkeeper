@@ -8,7 +8,7 @@ import (
 )
 
 func (s Server) UpdateData(ctx context.Context, r *pb.UpdateDataRequest) (*pb.Data, error) {
-	userID, err := s.u.UserAuth(r.Token.AccessToken)
+	userID, err := s.u.Authenticate(r.Token.AccessToken)
 	if err != nil {
 		//TODO: handle errors
 	}

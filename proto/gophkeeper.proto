@@ -16,6 +16,7 @@ service gophkeeper {
     // TODO:
     // ChangePassword
     // DeleteUser
+    // LogoutAllSessions - выйти отовсюду для данного пользователя
 
     rpc RegisterEvent(RegisterEventRequest) returns (google.protobuf.Empty);
     rpc UpdateData(UpdateDataRequest) returns (Data);
