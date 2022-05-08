@@ -59,7 +59,7 @@ type (
 		Number         string
 		CardholderName string
 		Date           string
-		CVC            int
+		CVC            uint32
 	}
 
 	MetaData map[string]string

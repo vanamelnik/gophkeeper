@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/vanamelnik/gophkeeper/models"
 )
 
@@ -10,14 +11,14 @@ type (
 	Storage interface {
 		CreateUser(ctx context.Context, login, passwordHash string) (models.User, error)
 		UpdateUser(ctx context.Context, user models.User) error
-		DeleteUser(ctx context.Context, userID uint) error
+		DeleteUser(ctx context.Context, UserID uuid.UUID) error
 
-		LoginNewSession(ctx context.Context, userID uint) (models.Session, error)
+		LoginNewSession(ctx context.Context, UserID uuid.UUID) (models.Session, error)
 		UpdateSession(ctx context.Context, session models.Session) error
 		LogoutSession(ctx context.Context, session models.Session) error
 
-		NewUserTx(ctx context.Context, userID uint) (UserTransaction, error)
-		GetUserData(ctx context.Context, userID uint) (models.UserData, error)
+		NewUserTx(ctx context.Context, UserID uuid.UUID) (UserTransaction, error)
+		GetUserData(ctx context.Context, UserID uuid.UUID) (*models.UserData, error)
 	}
 
 	UserTransaction interface {
@@ -36,6 +37,6 @@ type (
 		DeletePassword(ctx context.Context, item models.PasswordItem) error
 		DeleteCard(ctx context.Context, item models.CardItem) error
 
-		Close(ctx context.Context) error
+		Close() error
 	}
 )
