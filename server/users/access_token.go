@@ -27,7 +27,7 @@ func (s Service) NewAccessToken(userID string) (string, error) {
 
 func (s Service) Authenticate(accessToken string) (uuid.UUID, error) {
 	t, err := jwt.Parse(accessToken, func(t *jwt.Token) (interface{}, error) {
-		return s.accessTokenSecret, nil
+		return []byte(s.accessTokenSecret), nil
 	})
 	if err != nil {
 		return uuid.Nil, err

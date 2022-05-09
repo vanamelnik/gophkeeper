@@ -1,10 +1,10 @@
 package users
 
+import "github.com/vanamelnik/gophkeeper/models"
+
 const RefreshTokenLength = 8
 
-type RefreshToken string
-
-func (s Service) GenerateRefreshToken() RefreshToken {
+func (s Service) GenerateRefreshToken() models.RefreshToken {
 	// TODO:
 	// ...
 	return ""
