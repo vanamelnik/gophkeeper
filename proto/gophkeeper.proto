@@ -7,7 +7,6 @@ package proto;
 option go_package="./proto";
 
 import "google/protobuf/empty.proto";
-import "google/protobuf/timestamp.proto";
 
 service gophkeeper {
     rpc SignUp(SignInData) returns (UserAuth);
@@ -18,7 +17,7 @@ service gophkeeper {
     // DeleteUser
     // LogoutAllSessions - выйти отовсюду для данного пользователя
 
-    rpc RegisterEvent(RegisterEventRequest) returns (google.protobuf.Empty);
+    rpc ProcessEvents(ProcessEventsRequest) returns (google.protobuf.Empty);
     rpc UpdateData(UpdateDataRequest) returns (Data);
 }
 
@@ -94,22 +93,22 @@ message Event {
         UPDATE = 1;
         DELETE = 2;
     }
-    google.protobuf.Timestamp timestamp = 1;
-    Operation operation = 2;
+    Operation operation = 1;
     oneof item {
-        Password password = 3;
-        Blob blob = 4;
-        Text text = 5;
-        Card card = 6;
+        Password password = 2;
+        Blob blob = 3;
+        Text text = 4;
+        Card card = 5;
     }
 }
 
 message UpdateDataRequest {
     AccessToken token = 1;
-    uint64 version = 2;
+    uint64 data_version = 2;
 }
 
-message RegisterEventRequest {
+message ProcessEventsRequest {
     AccessToken token = 1;
-    Event event = 2;
+    uint64 data_version = 2;
+    repeated Event events = 3;
 }

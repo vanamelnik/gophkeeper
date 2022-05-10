@@ -19,7 +19,7 @@ type (
 		// All fields must be filled.
 		UpdateUser(ctx context.Context, user models.User) error
 		// DeleteUser removes the user provided from the database.
-		DeleteUser(ctx context.Context, userID uint) error
+		DeleteUser(ctx context.Context, userID uuid.UUID) error
 
 		// CreateSession creates a record in the database for the new
 		// session. All data should be validated by the caller.
@@ -28,15 +28,15 @@ type (
 		// Field UserID is ignored.
 		UpdateSession(ctx context.Context, session models.Session) error
 		// GetSessionByID returns the session with ID prvided.
-		GetSessionByID(ctx context.Context, sessionID uuid.UUID) (models.Session, error)
+		GetSessionByID(ctx context.Context, sessionID uint) (models.Session, error)
 		// GetActiveUserSessions returns all active sessions of the specified user.
 		// If there are no active sessions, an empy list is returned and a nil error.
-		GetActiveUserSessions(ctx context.Context, userID uint) ([]models.Session, error)
+		GetActiveUserSessions(ctx context.Context, userID uuid.UUID) ([]models.Session, error)
 		// LogoutAll marks all session of the user provided as logged out.
-		LogoutAll(ctx context.Context, userID uint) error
+		LogoutAll(ctx context.Context, userID uuid.UUID) error
 
 		// NewUserTransaction starts a new transaction that implements the specified user's events.
-		NewUserTransaction(ctx context.Context, UserID uint) (UserTransaction, error)
+		NewUserTransaction(ctx context.Context, UserID uuid.UUID) (UserTransaction, error)
 
 		// GetUserData returns all user's items: passwords, blobs, texts and cards.
 		GetUserData(ctx context.Context, UserID uuid.UUID) (*models.UserData, error)
@@ -72,7 +72,7 @@ type (
 		// DeleteCard deletes the card record in the database.
 		DeleteCard(ctx context.Context, item models.CardItem) error
 
-		// RollBack cancels the transaction.
+		// RollBack cancels the transaction if it's not closed yet.
 		RollBack() error
 		// Commit closes the transaction and commits all changes.
 		// Also it increments DataVersion field of the user.

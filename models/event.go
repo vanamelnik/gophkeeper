@@ -1,6 +1,18 @@
 package models
 
-import "time"
+// Event represents a change in data in user's storage
+type Event struct {
+	Operation Operation
+	// Item should be one of these objects:
+	//	- TextItem
+	//	- BinaryItem
+	//	- PasswordItem
+	//	- CardItem
+	Item interface{}
+}
+
+// Operation specifies which operation to take on the data.
+type Operation string
 
 const (
 	OpCreate Operation = "CREATE"
@@ -8,12 +20,8 @@ const (
 	OpDelete Operation = "DELETE"
 )
 
-type (
-	Operation string
-
-	Event struct {
-		Timestamp time.Time
-		Operation Operation
-		Item      interface{}
-	}
-)
+func (o Operation) Valid() bool {
+	return o == OpCreate ||
+		o == OpUpdate ||
+		o == OpDelete
+}

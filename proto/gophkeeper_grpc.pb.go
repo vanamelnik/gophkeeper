@@ -26,7 +26,7 @@ type GophkeeperClient interface {
 	SignUp(ctx context.Context, in *SignInData, opts ...grpc.CallOption) (*UserAuth, error)
 	LogIn(ctx context.Context, in *SignInData, opts ...grpc.CallOption) (*UserAuth, error)
 	GetNewTokens(ctx context.Context, in *RefreshToken, opts ...grpc.CallOption) (*UserAuth, error)
-	RegisterEvent(ctx context.Context, in *RegisterEventRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	ProcessEvents(ctx context.Context, in *ProcessEventsRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	UpdateData(ctx context.Context, in *UpdateDataRequest, opts ...grpc.CallOption) (*Data, error)
 }
 
@@ -65,9 +65,9 @@ func (c *gophkeeperClient) GetNewTokens(ctx context.Context, in *RefreshToken, o
 	return out, nil
 }
 
-func (c *gophkeeperClient) RegisterEvent(ctx context.Context, in *RegisterEventRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (c *gophkeeperClient) ProcessEvents(ctx context.Context, in *ProcessEventsRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	out := new(empty.Empty)
-	err := c.cc.Invoke(ctx, "/proto.gophkeeper/RegisterEvent", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/proto.gophkeeper/ProcessEvents", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +90,7 @@ type GophkeeperServer interface {
 	SignUp(context.Context, *SignInData) (*UserAuth, error)
 	LogIn(context.Context, *SignInData) (*UserAuth, error)
 	GetNewTokens(context.Context, *RefreshToken) (*UserAuth, error)
-	RegisterEvent(context.Context, *RegisterEventRequest) (*empty.Empty, error)
+	ProcessEvents(context.Context, *ProcessEventsRequest) (*empty.Empty, error)
 	UpdateData(context.Context, *UpdateDataRequest) (*Data, error)
 	mustEmbedUnimplementedGophkeeperServer()
 }
@@ -108,8 +108,8 @@ func (UnimplementedGophkeeperServer) LogIn(context.Context, *SignInData) (*UserA
 func (UnimplementedGophkeeperServer) GetNewTokens(context.Context, *RefreshToken) (*UserAuth, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetNewTokens not implemented")
 }
-func (UnimplementedGophkeeperServer) RegisterEvent(context.Context, *RegisterEventRequest) (*empty.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RegisterEvent not implemented")
+func (UnimplementedGophkeeperServer) ProcessEvents(context.Context, *ProcessEventsRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ProcessEvents not implemented")
 }
 func (UnimplementedGophkeeperServer) UpdateData(context.Context, *UpdateDataRequest) (*Data, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateData not implemented")
@@ -181,20 +181,20 @@ func _Gophkeeper_GetNewTokens_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Gophkeeper_RegisterEvent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RegisterEventRequest)
+func _Gophkeeper_ProcessEvents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProcessEventsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(GophkeeperServer).RegisterEvent(ctx, in)
+		return srv.(GophkeeperServer).ProcessEvents(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.gophkeeper/RegisterEvent",
+		FullMethod: "/proto.gophkeeper/ProcessEvents",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GophkeeperServer).RegisterEvent(ctx, req.(*RegisterEventRequest))
+		return srv.(GophkeeperServer).ProcessEvents(ctx, req.(*ProcessEventsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -237,8 +237,8 @@ var Gophkeeper_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Gophkeeper_GetNewTokens_Handler,
 		},
 		{
-			MethodName: "RegisterEvent",
-			Handler:    _Gophkeeper_RegisterEvent_Handler,
+			MethodName: "ProcessEvents",
+			Handler:    _Gophkeeper_ProcessEvents_Handler,
 		},
 		{
 			MethodName: "UpdateData",

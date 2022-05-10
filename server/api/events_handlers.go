@@ -12,7 +12,7 @@ func (s Server) UpdateData(ctx context.Context, r *pb.UpdateDataRequest) (*pb.Da
 	if err != nil {
 		//TODO: handle errors
 	}
-	data, err := s.g.GetUserData(ctx, userID, r.Version)
+	data, err := s.g.GetUserData(ctx, userID, r.DataVersion)
 	if err != nil {
 		//TODO: handle errors
 	}
@@ -69,7 +69,7 @@ func (s Server) UpdateData(ctx context.Context, r *pb.UpdateDataRequest) (*pb.Da
 	}, nil
 }
 
-func convertMetadata(m models.MetaData) []*pb.MetaData {
+func convertMetadata(m models.Metadata) []*pb.MetaData {
 	metadata := make([]*pb.MetaData, 0, len(m))
 	for key, value := range m {
 		metadata = append(metadata, &pb.MetaData{
