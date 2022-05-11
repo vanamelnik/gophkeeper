@@ -30,6 +30,8 @@ type Session struct {
 	LogoutAt     time.Time
 }
 
+// RefreshToken is a random string that used for check if the service may generate
+// a new access token to replace an expired one.
 type RefreshToken string
 
 // Items are the data types that are contained in the user's storage:
@@ -64,14 +66,15 @@ type (
 	// ItemHeader contains the necessary service fields and metadata.
 	ItemHeader struct {
 		ItemID    uuid.UUID
-		Meta      Metadata
+		Meta      JSONMetadata
 		CreatedAt time.Time
 		DeletedAt time.Time
 	}
 
-	// Metadata may contain different additional data such as login, bank name, kind of notes etc.
+	// JSONMetadata is a JSON string that represents a set of key-value pairs,
+	// that may contain different additional data such as login, bank name, kind of notes etc.
 	// The types of such data are not strictly defined and must be handled on the client side.
-	Metadata map[string]string
+	JSONMetadata string
 )
 
 // UserData represents the snapshot of all user's data stored in the storage.

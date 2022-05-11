@@ -3,10 +3,10 @@ package server
 import (
 	"context"
 
-	"github.com/vanamelnik/gophkeeper/models"
 	pb "github.com/vanamelnik/gophkeeper/proto"
 )
 
+// UpdateData implements GophkeeperServer interface.
 func (s Server) UpdateData(ctx context.Context, r *pb.UpdateDataRequest) (*pb.Data, error) {
 	userID, err := s.u.Authenticate(r.Token.AccessToken)
 	if err != nil {
@@ -22,7 +22,9 @@ func (s Server) UpdateData(ctx context.Context, r *pb.UpdateDataRequest) (*pb.Da
 			ItemId: &pb.ItemID{
 				ItemId: p.ItemID.String(),
 			},
-			Meta:     convertMetadata(p.Meta),
+			Meta: &pb.Metadata{
+				Metadata: string(p.Meta),
+			},
 			Password: p.Password,
 		})
 	}
@@ -32,7 +34,9 @@ func (s Server) UpdateData(ctx context.Context, r *pb.UpdateDataRequest) (*pb.Da
 			ItemId: &pb.ItemID{
 				ItemId: b.ItemID.String(),
 			},
-			Meta: convertMetadata(b.Meta),
+			Meta: &pb.Metadata{
+				Metadata: string(b.Meta),
+			},
 			Data: b.Binary,
 		})
 	}
@@ -42,7 +46,9 @@ func (s Server) UpdateData(ctx context.Context, r *pb.UpdateDataRequest) (*pb.Da
 			ItemId: &pb.ItemID{
 				ItemId: t.ItemID.String(),
 			},
-			Meta: convertMetadata(t.Meta),
+			Meta: &pb.Metadata{
+				Metadata: string(t.Meta),
+			},
 			Text: t.Text,
 		})
 	}
@@ -52,7 +58,9 @@ func (s Server) UpdateData(ctx context.Context, r *pb.UpdateDataRequest) (*pb.Da
 			ItemId: &pb.ItemID{
 				ItemId: c.ItemID.String(),
 			},
-			Meta:   convertMetadata(c.Meta),
+			Meta: &pb.Metadata{
+				Metadata: string(c.Meta),
+			},
 			Number: c.Number,
 			Name:   c.CardholderName,
 			Date:   c.Date,
@@ -67,15 +75,4 @@ func (s Server) UpdateData(ctx context.Context, r *pb.UpdateDataRequest) (*pb.Da
 		Cards:     cards,
 		Version:   data.Version,
 	}, nil
-}
-
-func convertMetadata(m models.Metadata) []*pb.MetaData {
-	metadata := make([]*pb.MetaData, 0, len(m))
-	for key, value := range m {
-		metadata = append(metadata, &pb.MetaData{
-			Key:   key,
-			Value: value,
-		})
-	}
-	return metadata
 }

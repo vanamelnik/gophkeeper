@@ -9,6 +9,7 @@ import (
 
 const jwtIssuer = "GophKeeper"
 
+// NewAccessToken creates a new token for the user provided and signs it with the secret key.
 func (s Service) NewAccessToken(userID string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
 		Audience:  "",
@@ -25,6 +26,7 @@ func (s Service) NewAccessToken(userID string) (string, error) {
 	return ss, nil
 }
 
+// Authenticate checks if the given access token is valid and, if so, returns the user ID.
 func (s Service) Authenticate(accessToken string) (uuid.UUID, error) {
 	t, err := jwt.Parse(accessToken, func(t *jwt.Token) (interface{}, error) {
 		return []byte(s.accessTokenSecret), nil

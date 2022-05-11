@@ -23,10 +23,20 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type GophkeeperClient interface {
+	// SignUp registers a new user.
 	SignUp(ctx context.Context, in *SignInData, opts ...grpc.CallOption) (*UserAuth, error)
+	// LogIn creates a new session for the user provided.
 	LogIn(ctx context.Context, in *SignInData, opts ...grpc.CallOption) (*UserAuth, error)
+	// GetNewTokens generates a new AccessToken + RefreshToken pair.
 	GetNewTokens(ctx context.Context, in *RefreshToken, opts ...grpc.CallOption) (*UserAuth, error)
+	// ProcessEvents applies the changes to the storage on the server.
+	// This method is allowed only if the version of user's data on the client side is equal
+	// to the version number on the server. Otherwise the error is returned and the client
+	// must first update data from the server.
 	ProcessEvents(ctx context.Context, in *ProcessEventsRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	// UpdateData downloads latest snapshot of the user's data from the server.
+	// If data_version field equals to version of the data on the server, the error "already
+	// up to date" is thrown.
 	UpdateData(ctx context.Context, in *UpdateDataRequest, opts ...grpc.CallOption) (*Data, error)
 }
 
@@ -87,10 +97,20 @@ func (c *gophkeeperClient) UpdateData(ctx context.Context, in *UpdateDataRequest
 // All implementations must embed UnimplementedGophkeeperServer
 // for forward compatibility
 type GophkeeperServer interface {
+	// SignUp registers a new user.
 	SignUp(context.Context, *SignInData) (*UserAuth, error)
+	// LogIn creates a new session for the user provided.
 	LogIn(context.Context, *SignInData) (*UserAuth, error)
+	// GetNewTokens generates a new AccessToken + RefreshToken pair.
 	GetNewTokens(context.Context, *RefreshToken) (*UserAuth, error)
+	// ProcessEvents applies the changes to the storage on the server.
+	// This method is allowed only if the version of user's data on the client side is equal
+	// to the version number on the server. Otherwise the error is returned and the client
+	// must first update data from the server.
 	ProcessEvents(context.Context, *ProcessEventsRequest) (*empty.Empty, error)
+	// UpdateData downloads latest snapshot of the user's data from the server.
+	// If data_version field equals to version of the data on the server, the error "already
+	// up to date" is thrown.
 	UpdateData(context.Context, *UpdateDataRequest) (*Data, error)
 	mustEmbedUnimplementedGophkeeperServer()
 }

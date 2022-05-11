@@ -9,42 +9,53 @@ option go_package="./proto";
 import "google/protobuf/empty.proto";
 
 service gophkeeper {
+    // SignUp registers a new user.
     rpc SignUp(SignInData) returns (UserAuth);
+    // LogIn creates a new session for the user provided.
     rpc LogIn(SignInData) returns (UserAuth);
+    // GetNewTokens generates a new AccessToken + RefreshToken pair.
     rpc GetNewTokens(RefreshToken) returns (UserAuth);
     // TODO:
     // ChangePassword
     // DeleteUser
     // LogoutAllSessions - выйти отовсюду для данного пользователя
 
+    // ProcessEvents applies the changes to the storage on the server.
+    // This method is allowed only if the version of user's data on the client side is equal
+    // to the version number on the server. Otherwise the error is returned and the client 
+    // must first update data from the server.
     rpc ProcessEvents(ProcessEventsRequest) returns (google.protobuf.Empty);
+
+    // UpdateData downloads latest snapshot of the user's data from the server.
+    // If data_version field equals to version of the data on the server, the error "already
+    // up to date" is thrown.
     rpc UpdateData(UpdateDataRequest) returns (Data);
 }
 
 message Password {
     ItemID item_id = 1;
-    repeated MetaData meta = 2;
+    Metadata meta = 2;
 
     string password = 3;
 }
 
 message Blob {
     ItemID item_id = 1;
-    repeated MetaData meta = 2;
+    Metadata meta = 2;
 
     bytes data = 3;
 }
 
 message Text {
     ItemID item_id = 1;
-    repeated MetaData meta = 2;
+    Metadata meta = 2;
 
     string text = 3;
 }
 
 message Card {
     ItemID item_id = 1;
-    repeated MetaData meta = 2;
+    Metadata meta = 2;
 
     string number = 3;
     string name = 4;
@@ -60,9 +71,9 @@ message Data {
     uint64 version = 100;
 }
 
-message MetaData {
-    string key = 1;
-    string value = 2;
+// Metadata is JSON string with metadata key:value pairs.
+message Metadata {
+    string metadata = 1;
 }
 
 message ItemID {
