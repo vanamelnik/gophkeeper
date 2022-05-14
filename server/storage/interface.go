@@ -46,31 +46,31 @@ type (
 	// Each transaction must be closed by calling Commit or RollBack method.
 	UserTransaction interface {
 		// CreateText adds a new text record in the database.
-		CreateText(ctx context.Context, item models.TextItem) error
+		CreateText(ctx context.Context, item models.TextData) error
 		// CreateBlob adds a new blob record in the database.
-		CreateBlob(ctx context.Context, item models.BinaryItem) error
+		CreateBlob(ctx context.Context, item models.BinaryData) error
 		// CreatePassword adds a new password record in the database.
-		CreatePassword(ctx context.Context, item models.PasswordItem) error
+		CreatePassword(ctx context.Context, item models.PasswordData) error
 		// CreateCard adds a new card record in the database.
-		CreateCard(ctx context.Context, item models.CardItem) error
+		CreateCard(ctx context.Context, item models.CardData) error
 
 		// UpdateText updates the text record in the database.
-		UpdateText(ctx context.Context, item models.TextItem) error
+		UpdateText(ctx context.Context, item models.TextData) error
 		// UpdateBlob updates the blob record in the database.
-		UpdateBlob(ctx context.Context, item models.BinaryItem) error
+		UpdateBlob(ctx context.Context, item models.BinaryData) error
 		// UpdatePassword updates the password record in the database.
-		UpdatePassword(ctx context.Context, item models.PasswordItem) error
+		UpdatePassword(ctx context.Context, item models.PasswordData) error
 		// UpdateCard updates the card record in the database.
-		UpdateCard(ctx context.Context, item models.CardItem) error
+		UpdateCard(ctx context.Context, item models.CardData) error
 
 		// DeleteText deletes the text record in the database.
-		DeleteText(ctx context.Context, item models.TextItem) error
+		DeleteText(ctx context.Context, item models.TextData) error
 		// DeleteBlob deletes the blob record in the database.
-		DeleteBlob(ctx context.Context, item models.BinaryItem) error
+		DeleteBlob(ctx context.Context, item models.BinaryData) error
 		// DeletePassword deletes the password record in the database.
-		DeletePassword(ctx context.Context, item models.PasswordItem) error
+		DeletePassword(ctx context.Context, item models.PasswordData) error
 		// DeleteCard deletes the card record in the database.
-		DeleteCard(ctx context.Context, item models.CardItem) error
+		DeleteCard(ctx context.Context, item models.CardData) error
 
 		// RollBack cancels the transaction if it's not closed yet.
 		RollBack() error

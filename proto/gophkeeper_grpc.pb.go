@@ -33,11 +33,11 @@ type GophkeeperClient interface {
 	// This method is allowed only if the version of user's data on the client side is equal
 	// to the version number on the server. Otherwise the error is returned and the client
 	// must first update data from the server.
-	ProcessEvents(ctx context.Context, in *ProcessEventsRequest, opts ...grpc.CallOption) (*empty.Empty, error)
-	// UpdateData downloads latest snapshot of the user's data from the server.
+	ProcessEvent(ctx context.Context, in *ProcessEventRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	// DownloadUserData downloads latest snapshot of the user's data from the server.
 	// If data_version field equals to version of the data on the server, the error "already
 	// up to date" is thrown.
-	UpdateData(ctx context.Context, in *UpdateDataRequest, opts ...grpc.CallOption) (*Data, error)
+	DownloadUserData(ctx context.Context, in *UpdateDataRequest, opts ...grpc.CallOption) (*UserData, error)
 }
 
 type gophkeeperClient struct {
@@ -75,18 +75,18 @@ func (c *gophkeeperClient) GetNewTokens(ctx context.Context, in *RefreshToken, o
 	return out, nil
 }
 
-func (c *gophkeeperClient) ProcessEvents(ctx context.Context, in *ProcessEventsRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (c *gophkeeperClient) ProcessEvent(ctx context.Context, in *ProcessEventRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	out := new(empty.Empty)
-	err := c.cc.Invoke(ctx, "/proto.gophkeeper/ProcessEvents", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/proto.gophkeeper/ProcessEvent", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *gophkeeperClient) UpdateData(ctx context.Context, in *UpdateDataRequest, opts ...grpc.CallOption) (*Data, error) {
-	out := new(Data)
-	err := c.cc.Invoke(ctx, "/proto.gophkeeper/UpdateData", in, out, opts...)
+func (c *gophkeeperClient) DownloadUserData(ctx context.Context, in *UpdateDataRequest, opts ...grpc.CallOption) (*UserData, error) {
+	out := new(UserData)
+	err := c.cc.Invoke(ctx, "/proto.gophkeeper/DownloadUserData", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -107,11 +107,11 @@ type GophkeeperServer interface {
 	// This method is allowed only if the version of user's data on the client side is equal
 	// to the version number on the server. Otherwise the error is returned and the client
 	// must first update data from the server.
-	ProcessEvents(context.Context, *ProcessEventsRequest) (*empty.Empty, error)
-	// UpdateData downloads latest snapshot of the user's data from the server.
+	ProcessEvent(context.Context, *ProcessEventRequest) (*empty.Empty, error)
+	// DownloadUserData downloads latest snapshot of the user's data from the server.
 	// If data_version field equals to version of the data on the server, the error "already
 	// up to date" is thrown.
-	UpdateData(context.Context, *UpdateDataRequest) (*Data, error)
+	DownloadUserData(context.Context, *UpdateDataRequest) (*UserData, error)
 	mustEmbedUnimplementedGophkeeperServer()
 }
 
@@ -128,11 +128,11 @@ func (UnimplementedGophkeeperServer) LogIn(context.Context, *SignInData) (*UserA
 func (UnimplementedGophkeeperServer) GetNewTokens(context.Context, *RefreshToken) (*UserAuth, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetNewTokens not implemented")
 }
-func (UnimplementedGophkeeperServer) ProcessEvents(context.Context, *ProcessEventsRequest) (*empty.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ProcessEvents not implemented")
+func (UnimplementedGophkeeperServer) ProcessEvent(context.Context, *ProcessEventRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ProcessEvent not implemented")
 }
-func (UnimplementedGophkeeperServer) UpdateData(context.Context, *UpdateDataRequest) (*Data, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateData not implemented")
+func (UnimplementedGophkeeperServer) DownloadUserData(context.Context, *UpdateDataRequest) (*UserData, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DownloadUserData not implemented")
 }
 func (UnimplementedGophkeeperServer) mustEmbedUnimplementedGophkeeperServer() {}
 
@@ -201,38 +201,38 @@ func _Gophkeeper_GetNewTokens_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Gophkeeper_ProcessEvents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ProcessEventsRequest)
+func _Gophkeeper_ProcessEvent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProcessEventRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(GophkeeperServer).ProcessEvents(ctx, in)
+		return srv.(GophkeeperServer).ProcessEvent(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.gophkeeper/ProcessEvents",
+		FullMethod: "/proto.gophkeeper/ProcessEvent",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GophkeeperServer).ProcessEvents(ctx, req.(*ProcessEventsRequest))
+		return srv.(GophkeeperServer).ProcessEvent(ctx, req.(*ProcessEventRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Gophkeeper_UpdateData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Gophkeeper_DownloadUserData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateDataRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(GophkeeperServer).UpdateData(ctx, in)
+		return srv.(GophkeeperServer).DownloadUserData(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.gophkeeper/UpdateData",
+		FullMethod: "/proto.gophkeeper/DownloadUserData",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GophkeeperServer).UpdateData(ctx, req.(*UpdateDataRequest))
+		return srv.(GophkeeperServer).DownloadUserData(ctx, req.(*UpdateDataRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -257,12 +257,12 @@ var Gophkeeper_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Gophkeeper_GetNewTokens_Handler,
 		},
 		{
-			MethodName: "ProcessEvents",
-			Handler:    _Gophkeeper_ProcessEvents_Handler,
+			MethodName: "ProcessEvent",
+			Handler:    _Gophkeeper_ProcessEvent_Handler,
 		},
 		{
-			MethodName: "UpdateData",
-			Handler:    _Gophkeeper_UpdateData_Handler,
+			MethodName: "DownloadUserData",
+			Handler:    _Gophkeeper_DownloadUserData_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

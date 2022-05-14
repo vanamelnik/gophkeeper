@@ -24,51 +24,47 @@ service gophkeeper {
     // This method is allowed only if the version of user's data on the client side is equal
     // to the version number on the server. Otherwise the error is returned and the client 
     // must first update data from the server.
-    rpc ProcessEvents(ProcessEventsRequest) returns (google.protobuf.Empty);
+    rpc ProcessEvent(ProcessEventRequest) returns (google.protobuf.Empty);
 
-    // UpdateData downloads latest snapshot of the user's data from the server.
+    // DownloadUserData downloads latest snapshot of the user's data from the server.
     // If data_version field equals to version of the data on the server, the error "already
     // up to date" is thrown.
-    rpc UpdateData(UpdateDataRequest) returns (Data);
+    rpc DownloadUserData(UpdateDataRequest) returns (UserData);
+}
+
+message Item {
+    ItemID item_id = 1;
+    oneof data {
+        Password password = 2;
+        Blob blob = 3;
+        Text text = 4;
+        Card card = 5;
+    }
+    Metadata metadata = 100;
 }
 
 message Password {
-    ItemID item_id = 1;
-    Metadata meta = 2;
-
-    string password = 3;
+    string password = 1;
 }
 
 message Blob {
-    ItemID item_id = 1;
-    Metadata meta = 2;
-
-    bytes data = 3;
+    bytes data = 1;
 }
 
 message Text {
-    ItemID item_id = 1;
-    Metadata meta = 2;
-
-    string text = 3;
+    string text = 1;
 }
 
 message Card {
-    ItemID item_id = 1;
-    Metadata meta = 2;
-
-    string number = 3;
-    string name = 4;
-    string date = 5;
-    uint32 cvc = 6;
+    string number = 1;
+    string name = 2;
+    string date = 3;
+    uint32 cvc = 4;
 }
 
-message Data {
-    repeated Password passwords = 1;
-    repeated Blob blobs = 2;
-    repeated Text texts = 3;
-    repeated Card cards = 4;
-    uint64 version = 100;
+message UserData {
+    uint64 version = 1;
+    repeated Item items = 2;
 }
 
 // Metadata is JSON string with metadata key:value pairs.
@@ -105,12 +101,7 @@ message Event {
         DELETE = 2;
     }
     Operation operation = 1;
-    oneof item {
-        Password password = 2;
-        Blob blob = 3;
-        Text text = 4;
-        Card card = 5;
-    }
+    Item item = 2;
 }
 
 message UpdateDataRequest {
@@ -118,8 +109,8 @@ message UpdateDataRequest {
     uint64 data_version = 2;
 }
 
-message ProcessEventsRequest {
+message ProcessEventRequest {
     AccessToken token = 1;
     uint64 data_version = 2;
-    repeated Event events = 3;
+    Event event = 3;
 }

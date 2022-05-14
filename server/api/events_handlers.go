@@ -3,11 +3,12 @@ package server
 import (
 	"context"
 
+	"github.com/vanamelnik/gophkeeper/models"
 	pb "github.com/vanamelnik/gophkeeper/proto"
 )
 
-// UpdateData implements GophkeeperServer interface.
-func (s Server) UpdateData(ctx context.Context, r *pb.UpdateDataRequest) (*pb.Data, error) {
+// DownloadUserData implements GophkeeperServer interface.
+func (s Server) DownloadUserData(ctx context.Context, r *pb.UpdateDataRequest) (*pb.UserData, error) {
 	userID, err := s.u.Authenticate(r.Token.AccessToken)
 	if err != nil {
 		//TODO: handle errors
@@ -16,63 +17,41 @@ func (s Server) UpdateData(ctx context.Context, r *pb.UpdateDataRequest) (*pb.Da
 	if err != nil {
 		//TODO: handle errors
 	}
-	passwords := make([]*pb.Password, 0, len(data.Passwords))
-	for _, p := range data.Passwords {
-		passwords = append(passwords, &pb.Password{
+	// Convert to awful protobuf format.
+	pbItems := make([]*pb.Item, 0, len(data.Items))
+	for _, item := range data.Items {
+		pbItem := pb.Item{
 			ItemId: &pb.ItemID{
-				ItemId: p.ItemID.String(),
+				ItemId: item.ID.String(),
 			},
-			Meta: &pb.Metadata{
-				Metadata: string(p.Meta),
+			Metadata: &pb.Metadata{
+				Metadata: string(item.Meta),
 			},
-			Password: p.Password,
-		})
-	}
-	blobs := make([]*pb.Blob, 0, len(data.Blobs))
-	for _, b := range data.Blobs {
-		blobs = append(blobs, &pb.Blob{
-			ItemId: &pb.ItemID{
-				ItemId: b.ItemID.String(),
-			},
-			Meta: &pb.Metadata{
-				Metadata: string(b.Meta),
-			},
-			Data: b.Binary,
-		})
-	}
-	texts := make([]*pb.Text, 0, len(data.Texts))
-	for _, t := range data.Texts {
-		texts = append(texts, &pb.Text{
-			ItemId: &pb.ItemID{
-				ItemId: t.ItemID.String(),
-			},
-			Meta: &pb.Metadata{
-				Metadata: string(t.Meta),
-			},
-			Text: t.Text,
-		})
-	}
-	cards := make([]*pb.Card, 0, len(data.Cards))
-	for _, c := range data.Cards {
-		cards = append(cards, &pb.Card{
-			ItemId: &pb.ItemID{
-				ItemId: c.ItemID.String(),
-			},
-			Meta: &pb.Metadata{
-				Metadata: string(c.Meta),
-			},
-			Number: c.Number,
-			Name:   c.CardholderName,
-			Date:   c.Date,
-			Cvc:    c.CVC,
-		})
+		}
+		switch body := item.Data.(type) {
+		case models.TextData:
+			text := pb.Item_Text{Text: &pb.Text{Text: body.Text}}
+			pbItem.Data = &text
+		case models.BinaryData:
+			blob := pb.Item_Blob{Blob: &pb.Blob{Data: body.Binary}}
+			pbItem.Data = &blob
+		case models.PasswordData:
+			password := pb.Item_Password{Password: &pb.Password{Password: body.Password}}
+			pbItem.Data = &password
+		case models.CardData:
+			card := pb.Item_Card{Card: &pb.Card{
+				Number: body.Number,
+				Name:   body.CardholderName,
+				Date:   body.Date,
+				Cvc:    body.CVC,
+			}}
+			pbItem.Data = &card
+		}
+		pbItems = append(pbItems, &pbItem)
 	}
 
-	return &pb.Data{
-		Passwords: passwords,
-		Blobs:     blobs,
-		Texts:     texts,
-		Cards:     cards,
-		Version:   data.Version,
+	return &pb.UserData{
+		Version: r.DataVersion,
+		Items:   pbItems,
 	}, nil
 }
