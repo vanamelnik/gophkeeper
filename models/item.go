@@ -10,8 +10,8 @@ type (
 	// Item contain user data with the header:
 	Item struct {
 		ID        uuid.UUID
-		CreatedAt time.Time
-		DeletedAt time.Time
+		CreatedAt *time.Time
+		DeletedAt *time.Time
 
 		// Data can be one of these types:
 		//	- TextData
