@@ -1,48 +1,53 @@
 package users
 
 import (
+	"errors"
+	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
+	"github.com/vanamelnik/gophkeeper/models"
 )
 
 const jwtIssuer = "GophKeeper"
 
-// NewAccessToken creates a new token for the user provided and signs it with the secret key.
-func (s Service) NewAccessToken(userID string) (string, error) {
+// newAccessToken creates a new token for the user provided and signs it with the secret key.
+func (s Service) newAccessToken(userID uuid.UUID) (models.AccessToken, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
 		Audience:  "",
 		ExpiresAt: time.Now().Add(s.accessTokenDuration).Unix(),
-		Id:        userID,
+		Id:        userID.String(),
 		IssuedAt:  time.Now().Unix(),
 		Issuer:    jwtIssuer,
 		NotBefore: time.Now().Unix(),
 	})
-	ss, err := token.SignedString([]byte(s.accessTokenSecret))
+	ss, err := token.SignedString([]byte(s.secret))
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("users: NewAccessToken: %w", err)
 	}
-	return ss, nil
+	return models.AccessToken(ss), nil
 }
 
 // Authenticate checks if the given access token is valid and, if so, returns the user ID.
-func (s Service) Authenticate(accessToken string) (uuid.UUID, error) {
-	t, err := jwt.Parse(accessToken, func(t *jwt.Token) (interface{}, error) {
-		return []byte(s.accessTokenSecret), nil
+func (s Service) Authenticate(accessToken models.AccessToken) (uuid.UUID, error) {
+	t, err := jwt.Parse(string(accessToken), func(t *jwt.Token) (interface{}, error) {
+		return []byte(s.secret), nil
 	})
 	if err != nil {
-		return uuid.Nil, err
+		var ve jwt.ValidationError
+		if errors.As(err, &ve) && ve.Errors&jwt.ValidationErrorExpired != 0 {
+			return uuid.Nil, fmt.Errorf("users: authenticate: %w", ErrAccessTokenExpired)
+		}
+		return uuid.Nil, fmt.Errorf("users: authenticate: %w", err)
 	}
-	// TODO: write token validation code
-	// ...
 	claims, ok := t.Claims.(*jwt.StandardClaims)
 	if !ok {
-		// TODO: return incorrect accessToken error
+		return uuid.Nil, fmt.Errorf("users: authenticate: %w", ErrIncorrectAccessToken)
 	}
 	id, err := uuid.Parse(claims.Id)
 	if err != nil {
-		// TODO: return incorrect userID error
+		return uuid.Nil, fmt.Errorf("users: authenticate: %w: userID=%s", ErrIncorrectUserID, claims.Id)
 	}
 	return id, nil
 }

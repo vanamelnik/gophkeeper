@@ -36,7 +36,7 @@ func (c Client) Close() {
 	}
 }
 
-func (c Client) NewEvent(event models.Event) {
+func (c Client) PublishEvent(event models.Event) {
 	c.eventCh <- event
 }
 
@@ -45,7 +45,7 @@ func (c Client) WhatsNew() {
 	// ...
 }
 
-func (c Client) PublishEvent(event models.Event) {
+func (c Client) sendEvent(event models.Event) {
 	// Add pending item to the local repo
 
 	// Try to send the item to the server
@@ -67,7 +67,7 @@ func (c Client) worker() {
 		case <-whatsNew.C:
 			c.WhatsNew()
 		case event := <-c.eventCh:
-			c.PublishEvent(event)
+			c.sendEvent(event)
 		}
 	}
 }

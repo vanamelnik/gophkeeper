@@ -24,16 +24,26 @@ type User struct {
 // For each session a pair of AccessToken + RefreshToken is created.
 // If AccessToken expires, RefreshToken will be the key to create a new token pair.
 type Session struct {
-	ID           uint
+	ID           uuid.UUID
 	UserID       uuid.UUID
 	RefreshToken RefreshToken
-	LoginAt      time.Time
-	LogoutAt     time.Time
+	LoginAt      *time.Time
+	LogoutAt     *time.Time
 }
 
-// RefreshToken is a random string that used for check if the service may generate
-// a new access token to replace an expired one.
-type RefreshToken string
+type (
+	// AccesToken is a JWT signed with a secret key. It has a short expiration time. When the token
+	// expires, it should be renewed with a refresh token.
+	// AccessToken contains standart JWT claims:
+	//		Issuer: 'GophKeeper'
+	//		ID: 	user ID
+	AccessToken string
+
+	// RefreshToken is a one-time JWT signed with a secret key.
+	// RefreshToken is stored in the user sessions table and represents a single user session.
+	// It has a long expiration time and is used to refresh an expired access token.
+	RefreshToken string
+)
 
 // UserData represents the snapshot of all user's data stored in the storage.
 // Each snapshot has an unique version number that is incremented when the data

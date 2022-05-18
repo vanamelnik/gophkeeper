@@ -8,7 +8,8 @@ import (
 
 // Server implements GophkeeperServer interface.
 type Server struct {
-	u users.Service
-	g gophkeeper.Service
+	users      users.Service
+	gophkeeper gophkeeper.Service
+
 	pb.UnimplementedGophkeeperServer
 }

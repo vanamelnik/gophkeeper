@@ -2,20 +2,31 @@ package server
 
 import (
 	"context"
+	"errors"
 
 	"github.com/vanamelnik/gophkeeper/models"
 	pb "github.com/vanamelnik/gophkeeper/proto"
+	"github.com/vanamelnik/gophkeeper/server/gophkeeper"
+	"github.com/vanamelnik/gophkeeper/server/storage"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // DownloadUserData implements GophkeeperServer interface.
 func (s Server) DownloadUserData(ctx context.Context, r *pb.UpdateDataRequest) (*pb.UserData, error) {
-	userID, err := s.u.Authenticate(r.Token.AccessToken)
+	userID, err := s.users.Authenticate(models.AccessToken(r.Token.AccessToken))
 	if err != nil {
-		//TODO: handle errors
+		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
-	data, err := s.g.GetUserData(ctx, userID, r.DataVersion)
+	data, err := s.gophkeeper.GetUserData(ctx, userID, r.DataVersion)
 	if err != nil {
-		//TODO: handle errors
+		if errors.Is(err, gophkeeper.ErrVersionUpToDate) {
+			return nil, status.Error(codes.AlreadyExists, err.Error())
+		}
+		if errors.Is(err, storage.ErrNotFound) {
+			return nil, status.Error(codes.NotFound, err.Error())
+		}
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 	// Convert to awful protobuf format.
 	pbItems := make([]*pb.Item, 0, len(data.Items))

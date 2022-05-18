@@ -14,12 +14,15 @@ type (
 	Storage interface {
 		// CreateUser creates a new record with user's data in the database.
 		// It returns models.User object with generated user ID and CreatedAt field.
+		// If user with such login is already exists, the erroro ErrAlreadyExists returns.
 		CreateUser(ctx context.Context, login, passwordHash string) (models.User, error)
 		// UpdateUser updates information of the user with ID provided.
 		// All fields must be filled.
 		UpdateUser(ctx context.Context, user models.User) error
 		// DeleteUser removes the user provided from the database.
 		DeleteUser(ctx context.Context, userID uuid.UUID) error
+		// GetUserByLogin finds the user with given login.
+		GetUserByLogin(ctx context.Context, login string) (models.User, error)
 
 		// CreateSession creates a record in the database for the new
 		// session. All data should be validated by the caller.
@@ -27,8 +30,9 @@ type (
 		// UpdateSession updates session information for the session with ID provided.
 		// Field UserID is ignored.
 		UpdateSession(ctx context.Context, session models.Session) error
-		// GetSessionByID returns the session with ID prvided.
-		GetSessionByID(ctx context.Context, sessionID uint) (models.Session, error)
+		// GetSessionByID returns the active session with ID prvided.
+		// If the session is logged out, ErrNotFound returns.
+		GetSessionByID(ctx context.Context, sessionID uuid.UUID) (models.Session, error)
 		// GetActiveUserSessions returns all active sessions of the specified user.
 		// If there are no active sessions, an empy list is returned and a nil error.
 		GetActiveUserSessions(ctx context.Context, userID uuid.UUID) ([]models.Session, error)

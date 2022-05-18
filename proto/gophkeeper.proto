@@ -9,12 +9,15 @@ option go_package="./proto";
 import "google/protobuf/empty.proto";
 
 service gophkeeper {
-    // SignUp registers a new user.
+    // SignUp registers a new user and creates a new user session.
     rpc SignUp(SignInData) returns (UserAuth);
     // LogIn creates a new session for the user provided.
     rpc LogIn(SignInData) returns (UserAuth);
     // GetNewTokens generates a new AccessToken + RefreshToken pair.
+    // If refresh token is expired, the session ends.
     rpc GetNewTokens(RefreshToken) returns (UserAuth);
+    // LogOut ends current user session.
+    rpc LogOut(RefreshToken) returns (google.protobuf.Empty);
     // TODO:
     // ChangePassword
     // DeleteUser

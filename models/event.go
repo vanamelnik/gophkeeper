@@ -3,12 +3,7 @@ package models
 // Event represents a change in data in user's storage
 type Event struct {
 	Operation Operation
-	// Item should be a pointer to one of these objects:
-	//	- TextItem
-	//	- BinaryItem
-	//	- PasswordItem
-	//	- CardItem
-	Item interface{}
+	Item      Item
 }
 
 // Operation specifies which operation to take on the data.

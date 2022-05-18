@@ -23,12 +23,15 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type GophkeeperClient interface {
-	// SignUp registers a new user.
+	// SignUp registers a new user and creates a new user session.
 	SignUp(ctx context.Context, in *SignInData, opts ...grpc.CallOption) (*UserAuth, error)
 	// LogIn creates a new session for the user provided.
 	LogIn(ctx context.Context, in *SignInData, opts ...grpc.CallOption) (*UserAuth, error)
 	// GetNewTokens generates a new AccessToken + RefreshToken pair.
+	// If refresh token is expired, the session ends.
 	GetNewTokens(ctx context.Context, in *RefreshToken, opts ...grpc.CallOption) (*UserAuth, error)
+	// LogOut ends current user session.
+	LogOut(ctx context.Context, in *RefreshToken, opts ...grpc.CallOption) (*empty.Empty, error)
 	// ProcessEvents applies the changes to the storage on the server.
 	// This method is allowed only if the version of user's data on the client side is equal
 	// to the version number on the server. Otherwise the error is returned and the client
@@ -75,6 +78,15 @@ func (c *gophkeeperClient) GetNewTokens(ctx context.Context, in *RefreshToken, o
 	return out, nil
 }
 
+func (c *gophkeeperClient) LogOut(ctx context.Context, in *RefreshToken, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/proto.gophkeeper/LogOut", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *gophkeeperClient) ProcessEvent(ctx context.Context, in *ProcessEventRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	out := new(empty.Empty)
 	err := c.cc.Invoke(ctx, "/proto.gophkeeper/ProcessEvent", in, out, opts...)
@@ -97,12 +109,15 @@ func (c *gophkeeperClient) DownloadUserData(ctx context.Context, in *UpdateDataR
 // All implementations must embed UnimplementedGophkeeperServer
 // for forward compatibility
 type GophkeeperServer interface {
-	// SignUp registers a new user.
+	// SignUp registers a new user and creates a new user session.
 	SignUp(context.Context, *SignInData) (*UserAuth, error)
 	// LogIn creates a new session for the user provided.
 	LogIn(context.Context, *SignInData) (*UserAuth, error)
 	// GetNewTokens generates a new AccessToken + RefreshToken pair.
+	// If refresh token is expired, the session ends.
 	GetNewTokens(context.Context, *RefreshToken) (*UserAuth, error)
+	// LogOut ends current user session.
+	LogOut(context.Context, *RefreshToken) (*empty.Empty, error)
 	// ProcessEvents applies the changes to the storage on the server.
 	// This method is allowed only if the version of user's data on the client side is equal
 	// to the version number on the server. Otherwise the error is returned and the client
@@ -127,6 +142,9 @@ func (UnimplementedGophkeeperServer) LogIn(context.Context, *SignInData) (*UserA
 }
 func (UnimplementedGophkeeperServer) GetNewTokens(context.Context, *RefreshToken) (*UserAuth, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetNewTokens not implemented")
+}
+func (UnimplementedGophkeeperServer) LogOut(context.Context, *RefreshToken) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method LogOut not implemented")
 }
 func (UnimplementedGophkeeperServer) ProcessEvent(context.Context, *ProcessEventRequest) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ProcessEvent not implemented")
@@ -201,6 +219,24 @@ func _Gophkeeper_GetNewTokens_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Gophkeeper_LogOut_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RefreshToken)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GophkeeperServer).LogOut(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.gophkeeper/LogOut",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GophkeeperServer).LogOut(ctx, req.(*RefreshToken))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Gophkeeper_ProcessEvent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ProcessEventRequest)
 	if err := dec(in); err != nil {
@@ -255,6 +291,10 @@ var Gophkeeper_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetNewTokens",
 			Handler:    _Gophkeeper_GetNewTokens_Handler,
+		},
+		{
+			MethodName: "LogOut",
+			Handler:    _Gophkeeper_LogOut_Handler,
 		},
 		{
 			MethodName: "ProcessEvent",
