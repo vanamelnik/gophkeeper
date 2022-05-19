@@ -7,6 +7,7 @@ package proto;
 option go_package="./proto";
 
 import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
 
 service gophkeeper {
     // SignUp registers a new user and creates a new user session.
@@ -23,16 +24,16 @@ service gophkeeper {
     // DeleteUser
     // LogoutAllSessions - выйти отовсюду для данного пользователя
 
-    // ProcessEvents applies the changes to the storage on the server.
+    // PublishLocalChanges applies the changes to the storage on the server.
     // This method is allowed only if the version of user's data on the client side is equal
     // to the version number on the server. Otherwise the error is returned and the client 
     // must first update data from the server.
-    rpc ProcessEvent(ProcessEventRequest) returns (google.protobuf.Empty);
+    rpc PublishLocalChanges(PublishLocalChangesRequest) returns (google.protobuf.Empty);
 
     // DownloadUserData downloads latest snapshot of the user's data from the server.
     // If data_version field equals to version of the data on the server, the error "already
     // up to date" is thrown.
-    rpc DownloadUserData(UpdateDataRequest) returns (UserData);
+    rpc DownloadUserData(UserDataRequest) returns (UserData);
 }
 
 message Item {
@@ -43,6 +44,8 @@ message Item {
         Text text = 4;
         Card card = 5;
     }
+    google.protobuf.Timestamp created_at = 6;
+    google.protobuf.Timestamp deleted_at = 7;
     Metadata metadata = 100;
 }
 
@@ -107,13 +110,13 @@ message Event {
     Item item = 2;
 }
 
-message UpdateDataRequest {
+message UserDataRequest {
     AccessToken token = 1;
     uint64 data_version = 2;
 }
 
-message ProcessEventRequest {
+message PublishLocalChangesRequest {
     AccessToken token = 1;
     uint64 data_version = 2;
-    Event event = 3;
+    repeated Event events = 3;
 }

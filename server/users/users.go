@@ -154,3 +154,7 @@ func (s Service) Logout(ctx context.Context, sessionID uuid.UUID) error {
 
 	return nil
 }
+
+func (s Service) GetDataVersion(ctx context.Context, userID uuid.UUID) (uint64, error) {
+	return s.storage.GetUserDataVersion(ctx, userID)
+}

@@ -23,6 +23,8 @@ type (
 		DeleteUser(ctx context.Context, userID uuid.UUID) error
 		// GetUserByLogin finds the user with given login.
 		GetUserByLogin(ctx context.Context, login string) (models.User, error)
+		// GetUserDataVersion returns current user data version.
+		GetUserDataVersion(ctx context.Context, userID uuid.UUID) (uint64, error)
 
 		// CreateSession creates a record in the database for the new
 		// session. All data should be validated by the caller.
@@ -49,32 +51,16 @@ type (
 	// UserTransaction is an interface that wraps methods that performs user events committing.
 	// Each transaction must be closed by calling Commit or RollBack method.
 	UserTransaction interface {
-		// CreateText adds a new text record in the database.
-		CreateText(ctx context.Context, item models.TextData) error
-		// CreateBlob adds a new blob record in the database.
-		CreateBlob(ctx context.Context, item models.BinaryData) error
-		// CreatePassword adds a new password record in the database.
-		CreatePassword(ctx context.Context, item models.PasswordData) error
-		// CreateCard adds a new card record in the database.
-		CreateCard(ctx context.Context, item models.CardData) error
+		// CreateItem adds a new record in the database.
+		CreateItem(ctx context.Context, item models.Item) error
 
-		// UpdateText updates the text record in the database.
-		UpdateText(ctx context.Context, item models.TextData) error
+		// UpdateItem updates the record in the database.
+		UpdateItem(ctx context.Context, item models.Item) error
 		// UpdateBlob updates the blob record in the database.
-		UpdateBlob(ctx context.Context, item models.BinaryData) error
-		// UpdatePassword updates the password record in the database.
-		UpdatePassword(ctx context.Context, item models.PasswordData) error
-		// UpdateCard updates the card record in the database.
-		UpdateCard(ctx context.Context, item models.CardData) error
 
-		// DeleteText deletes the text record in the database.
-		DeleteText(ctx context.Context, item models.TextData) error
+		// DeleteItem deletes the record in the database.
+		DeleteItem(ctx context.Context, item models.Item) error
 		// DeleteBlob deletes the blob record in the database.
-		DeleteBlob(ctx context.Context, item models.BinaryData) error
-		// DeletePassword deletes the password record in the database.
-		DeletePassword(ctx context.Context, item models.PasswordData) error
-		// DeleteCard deletes the card record in the database.
-		DeleteCard(ctx context.Context, item models.CardData) error
 
 		// RollBack cancels the transaction if it's not closed yet.
 		RollBack() error
