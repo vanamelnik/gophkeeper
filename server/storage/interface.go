@@ -64,6 +64,7 @@ type (
 
 		// RollBack cancels the transaction if it's not closed yet.
 		RollBack() error
+
 		// Commit closes the transaction and commits all changes.
 		// Also it increments DataVersion field of the user.
 		Commit() error

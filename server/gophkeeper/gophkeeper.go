@@ -49,44 +49,21 @@ func (s Service) PublishUserData(ctx context.Context, userID uuid.UUID, events [
 	defer tx.RollBack()
 
 	for _, event := range events {
-		switch data := event.Item.Data.(type) {
-		case models.TextData:
-			err := processText(ctx, tx, event.Operation, data)
+		switch event.Operation {
+		case models.OpCreate:
+			if err := tx.CreateItem(ctx, event.Item); err != nil {
+				return err
+			}
+		case models.OpUpdate:
+			if err := tx.UpdateItem(ctx, event.Item); err != nil {
+				return err
+			}
+		case models.OpDelete:
+			if err := tx.DeleteItem(ctx, event.Item); err != nil {
+				return err
+			}
 		}
 	}
 
-	return nil
-}
-
-func processText(ctx context.Context, tx storage.UserTransaction, op models.Operation, text models.TextData) error {
-	switch op {
-	case models.OpCreate:
-	case models.OpUpdate:
-	case models.OpDelete:
-	}
-	return nil
-}
-func processPassword(ctx context.Context, tx storage.UserTransaction, op models.Operation) error {
-	switch op {
-	case models.OpCreate:
-	case models.OpUpdate:
-	case models.OpDelete:
-	}
-	return nil
-}
-func processBinary(ctx context.Context, tx storage.UserTransaction, op models.Operation) error {
-	switch op {
-	case models.OpCreate:
-	case models.OpUpdate:
-	case models.OpDelete:
-	}
-	return nil
-}
-func processCard(ctx context.Context, tx storage.UserTransaction, op models.Operation) error {
-	switch op {
-	case models.OpCreate:
-	case models.OpUpdate:
-	case models.OpDelete:
-	}
 	return nil
 }

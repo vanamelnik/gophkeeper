@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/vanamelnik/gophkeeper/models"
@@ -84,7 +85,7 @@ func (s Server) PublishLocalChanges(ctx context.Context, r *pb.PublishLocalChang
 		return &emptypb.Empty{}, status.Error(codes.Internal, err.Error())
 	}
 	if r.DataVersion < dataVersion {
-		return &emptypb.Empty{}, status.Error(codes.PermissionDenied, "data version is out of date")
+		return &emptypb.Empty{}, status.Error(codes.PermissionDenied, "local data version is out of date")
 	}
 	// convert events to canonical format
 	events := make([]models.Event, 0, len(r.Events))
@@ -98,8 +99,13 @@ func (s Server) PublishLocalChanges(ctx context.Context, r *pb.PublishLocalChang
 			return &emptypb.Empty{}, status.Error(codes.InvalidArgument, "incorrect CreatedAt field")
 		}
 		createdAt := e.Item.CreatedAt.AsTime()
+		op := models.Operation(e.Operation.String())
+		if !op.Valid() {
+			return &emptypb.Empty{}, status.Error(codes.Internal,
+				fmt.Sprintf("wrong type of operation: %s", op))
+		}
 		event := models.Event{
-			Operation: models.Operation(e.Operation.String()),
+			Operation: op,
 			Item: models.Item{
 				ID:        itemID,
 				CreatedAt: &createdAt,
