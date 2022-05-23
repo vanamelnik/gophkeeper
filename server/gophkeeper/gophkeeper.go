@@ -16,7 +16,7 @@ type Service struct {
 }
 
 var (
-	ErrVersionUpToDate = errors.New("data version is already up to date")
+	ErrVersionUpToDate = errors.New("data version is up to date")
 )
 
 func NewGophkeeper(db storage.Storage) Service {
