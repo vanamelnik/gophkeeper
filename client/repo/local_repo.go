@@ -37,7 +37,13 @@ type (
 
 		// isChanged indicates if local user data has been changed and needs to be stored in the file.
 		isChanged bool
+
+		resolveConflict ResolveCallbackFn
 	}
+
+	// ResolveVallbackFn is callback function that invokes for merge conflict resolving.
+	// If the user prefers local item, function returns true.
+	ResolveCallbackFn func(recievedItem models.Item, localEntry Entry) (userChooseLocalItem bool)
 )
 
 // CreateItem stores user data to the local repository and marks it as 'pending'.
@@ -122,14 +128,14 @@ func (r *Repo) GetDataSnapshot() []Entry {
 // The method replaces the local item by the item provided or creates the new entry in the local repository.
 // 'Pending' flag is unset.
 // Contract: repo must be locked.
-func (r *Repo) forceMergeItem(item models.Item) error {
+func (r *Repo) forceMergeItem(item models.Item) {
 	r.RLock()
 	defer r.RUnlock()
 	for i, entry := range r.entries {
 		if entry.Item.ID == item.ID {
 			r.entries[i].Item = item
 			r.entries[i].Pending = false
-			return nil
+			return
 		}
 	}
 	// if there are no entry with such item, create it.
@@ -137,7 +143,6 @@ func (r *Repo) forceMergeItem(item models.Item) error {
 		Item:    item,
 		Pending: false,
 	})
-	return nil
 }
 
 // GetDataVersion returns current DataVersion of local user data.

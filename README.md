@@ -69,7 +69,7 @@ Data parsing blocks receiving and sending updates.
 When a new set of data is received from the server, the received _items_ are merged with those stored locally. Each _item_ received from the server is analyzed:
 
 - if there is no _item_ with such ID in the local repository, then this item is considered created in a session on another client and is added to the existing storage _entries_.
-- if there is an _item_ with such ID in local repository and the _Version_ of the received _item_ is newer:
+- if there is the _item_ with such ID in local repository and the _Version_ of the received _item_ is newer:
 - - if local _item_ has _Pending_ flag set and the payload is equal to the received item's payload, the update is considered approved by the server, _Pending_ flag is unset and the local _Version_ field is updates.
 - - if local _item_ has _Pending_ flag unset, the item considered changed on another client, payload is replaced and _Version_ field is renewed.
 - in all other cases, a **conflict resolution** procedure is performed.
