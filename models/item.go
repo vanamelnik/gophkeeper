@@ -9,16 +9,19 @@ import (
 type (
 	// Item contain user data with the header:
 	Item struct {
-		ID        uuid.UUID
+		ID uuid.UUID
+		// Version is current user data version. Should be changed ONLY on the server!
+		// When th new item is created, Version should be set to 0.
+		Version   uint64
 		CreatedAt *time.Time
 		DeletedAt *time.Time
 
-		// Data can be one of these types:
+		// Payload should be one of these types:
 		//	- TextData
 		//	- BinaryData
 		//	- PasswordData
 		//	- CardData
-		Data interface{}
+		Payload interface{}
 
 		Meta JSONMetadata
 	}
@@ -54,12 +57,12 @@ type (
 	JSONMetadata string
 )
 
-// IsValidItem checks the type of item.Data field.
+// IsValidItem checks the type of item.Payload field.
 func IsValidItem(item Item) error {
-	switch item.Data.(type) {
+	switch item.Payload.(type) {
 	case TextData, CardData, PasswordData, BinaryData:
 		return nil
 	default:
-		return ErrInvalidItem
+		return ErrInvalidPayload
 	}
 }

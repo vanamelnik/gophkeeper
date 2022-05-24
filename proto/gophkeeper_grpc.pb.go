@@ -37,10 +37,11 @@ type GophkeeperClient interface {
 	// to the version number on the server. Otherwise the error is returned and the client
 	// must first update data from the server.
 	PublishLocalChanges(ctx context.Context, in *PublishLocalChangesRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	// DownloadUserData downloads latest snapshot of the user's data from the server.
-	// If data_version field equals to version of the data on the server, the error "already
-	// up to date" is thrown.
-	DownloadUserData(ctx context.Context, in *UserDataRequest, opts ...grpc.CallOption) (*UserData, error)
+	// WhatsNew compares provided Data Version with such one stored on the server. If they are the same,
+	// OK status is returned. Otherwise, the error "update the data" is returned.
+	WhatsNew(ctx context.Context, in *WhatsNewRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// DownloadUserData analyses existing versions of the local items and downloads latest updates of the user's data from the server.
+	DownloadUserData(ctx context.Context, in *DownloadUserDataRequest, opts ...grpc.CallOption) (*UserData, error)
 }
 
 type gophkeeperClient struct {
@@ -96,7 +97,16 @@ func (c *gophkeeperClient) PublishLocalChanges(ctx context.Context, in *PublishL
 	return out, nil
 }
 
-func (c *gophkeeperClient) DownloadUserData(ctx context.Context, in *UserDataRequest, opts ...grpc.CallOption) (*UserData, error) {
+func (c *gophkeeperClient) WhatsNew(ctx context.Context, in *WhatsNewRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/proto.gophkeeper/WhatsNew", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gophkeeperClient) DownloadUserData(ctx context.Context, in *DownloadUserDataRequest, opts ...grpc.CallOption) (*UserData, error) {
 	out := new(UserData)
 	err := c.cc.Invoke(ctx, "/proto.gophkeeper/DownloadUserData", in, out, opts...)
 	if err != nil {
@@ -123,10 +133,11 @@ type GophkeeperServer interface {
 	// to the version number on the server. Otherwise the error is returned and the client
 	// must first update data from the server.
 	PublishLocalChanges(context.Context, *PublishLocalChangesRequest) (*emptypb.Empty, error)
-	// DownloadUserData downloads latest snapshot of the user's data from the server.
-	// If data_version field equals to version of the data on the server, the error "already
-	// up to date" is thrown.
-	DownloadUserData(context.Context, *UserDataRequest) (*UserData, error)
+	// WhatsNew compares provided Data Version with such one stored on the server. If they are the same,
+	// OK status is returned. Otherwise, the error "update the data" is returned.
+	WhatsNew(context.Context, *WhatsNewRequest) (*emptypb.Empty, error)
+	// DownloadUserData analyses existing versions of the local items and downloads latest updates of the user's data from the server.
+	DownloadUserData(context.Context, *DownloadUserDataRequest) (*UserData, error)
 	mustEmbedUnimplementedGophkeeperServer()
 }
 
@@ -149,7 +160,10 @@ func (UnimplementedGophkeeperServer) LogOut(context.Context, *RefreshToken) (*em
 func (UnimplementedGophkeeperServer) PublishLocalChanges(context.Context, *PublishLocalChangesRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PublishLocalChanges not implemented")
 }
-func (UnimplementedGophkeeperServer) DownloadUserData(context.Context, *UserDataRequest) (*UserData, error) {
+func (UnimplementedGophkeeperServer) WhatsNew(context.Context, *WhatsNewRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method WhatsNew not implemented")
+}
+func (UnimplementedGophkeeperServer) DownloadUserData(context.Context, *DownloadUserDataRequest) (*UserData, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DownloadUserData not implemented")
 }
 func (UnimplementedGophkeeperServer) mustEmbedUnimplementedGophkeeperServer() {}
@@ -255,8 +269,26 @@ func _Gophkeeper_PublishLocalChanges_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Gophkeeper_WhatsNew_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(WhatsNewRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GophkeeperServer).WhatsNew(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.gophkeeper/WhatsNew",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GophkeeperServer).WhatsNew(ctx, req.(*WhatsNewRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Gophkeeper_DownloadUserData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UserDataRequest)
+	in := new(DownloadUserDataRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -268,7 +300,7 @@ func _Gophkeeper_DownloadUserData_Handler(srv interface{}, ctx context.Context, 
 		FullMethod: "/proto.gophkeeper/DownloadUserData",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GophkeeperServer).DownloadUserData(ctx, req.(*UserDataRequest))
+		return srv.(GophkeeperServer).DownloadUserData(ctx, req.(*DownloadUserDataRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -299,6 +331,10 @@ var Gophkeeper_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "PublishLocalChanges",
 			Handler:    _Gophkeeper_PublishLocalChanges_Handler,
+		},
+		{
+			MethodName: "WhatsNew",
+			Handler:    _Gophkeeper_WhatsNew_Handler,
 		},
 		{
 			MethodName: "DownloadUserData",

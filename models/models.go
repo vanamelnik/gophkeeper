@@ -55,5 +55,5 @@ type UserData struct {
 
 // Errors
 var (
-	ErrInvalidItem = errors.New("invalid item type")
+	ErrInvalidPayload = errors.New("invalid payload type")
 )

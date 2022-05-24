@@ -16,7 +16,7 @@ import (
 )
 
 // DownloadUserData implements GophkeeperServer interface.
-func (s Server) DownloadUserData(ctx context.Context, r *pb.UserDataRequest) (*pb.UserData, error) {
+func (s Server) DownloadUserData(ctx context.Context, r *pb.DownloadUserDataRequest) (*pb.UserData, error) {
 	userID, err := s.users.Authenticate(ctx, models.AccessToken(r.Token.AccessToken))
 	if err != nil {
 		return nil, status.Error(codes.Unauthenticated, err.Error())
@@ -32,37 +32,9 @@ func (s Server) DownloadUserData(ctx context.Context, r *pb.UserDataRequest) (*p
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	// Convert to awful protobuf format.
 	pbItems := make([]*pb.Item, 0, len(data.Items))
 	for _, item := range data.Items {
-		pbItem := pb.Item{
-			ItemId: &pb.ItemID{
-				ItemId: item.ID.String(),
-			},
-			Metadata: &pb.Metadata{
-				Metadata: string(item.Meta),
-			},
-		}
-		switch body := item.Data.(type) {
-		case models.TextData:
-			text := pb.Item_Text{Text: &pb.Text{Text: body.Text}}
-			pbItem.Data = &text
-		case models.BinaryData:
-			blob := pb.Item_Blob{Blob: &pb.Blob{Data: body.Binary}}
-			pbItem.Data = &blob
-		case models.PasswordData:
-			password := pb.Item_Password{Password: &pb.Password{Password: body.Password}}
-			pbItem.Data = &password
-		case models.CardData:
-			card := pb.Item_Card{Card: &pb.Card{
-				Number: body.Number,
-				Name:   body.CardholderName,
-				Date:   body.Date,
-				Cvc:    body.CVC,
-			}}
-			pbItem.Data = &card
-		}
-		pbItems = append(pbItems, &pbItem)
+		pbItems = append(pbItems, models.ItemToPb(item))
 	}
 
 	return &pb.UserData{
@@ -92,7 +64,7 @@ func (s Server) PublishLocalChanges(ctx context.Context, r *pb.PublishLocalChang
 	for _, e := range r.Events {
 		itemID, err := uuid.Parse(e.Item.ItemId.ItemId)
 		if err != nil {
-			return &emptypb.Empty{}, status.Error(codes.Internal, err.Error())
+			return &emptypb.Empty{}, status.Error(codes.InvalidArgument, err.Error())
 		}
 
 		if e.Item.CreatedAt != nil || !e.Item.CreatedAt.IsValid() {
@@ -108,9 +80,10 @@ func (s Server) PublishLocalChanges(ctx context.Context, r *pb.PublishLocalChang
 			Operation: op,
 			Item: models.Item{
 				ID:        itemID,
+				Version:   e.Item.Version,
 				CreatedAt: &createdAt,
 				DeletedAt: nil,
-				Data:      parseData(e.Item.Data),
+				Payload:   parseData(e.Item.Payload),
 				Meta:      models.JSONMetadata(e.Item.Metadata.Metadata),
 			},
 		}
@@ -129,7 +102,7 @@ func (s Server) PublishLocalChanges(ctx context.Context, r *pb.PublishLocalChang
 		return &emptypb.Empty{}, status.Error(codes.Internal, err.Error())
 	}
 
-	return &emptypb.Empty{}, nil
+	return &emptypb.Empty{}, status.Error(codes.OK, "accepted")
 }
 
 // parseData converts protobuf Item.Data to models.Item.Data format.

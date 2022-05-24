@@ -30,22 +30,25 @@ service gophkeeper {
     // must first update data from the server.
     rpc PublishLocalChanges(PublishLocalChangesRequest) returns (google.protobuf.Empty);
 
-    // DownloadUserData downloads latest snapshot of the user's data from the server.
-    // If data_version field equals to version of the data on the server, the error "already
-    // up to date" is thrown.
-    rpc DownloadUserData(UserDataRequest) returns (UserData);
+    // WhatsNew compares provided Data Version with such one stored on the server. If they are the same,
+    // nil error is returned. Otherwise, the "NotFound" code and the error "update the data" is returned.
+    rpc WhatsNew(WhatsNewRequest) returns (google.protobuf.Empty);
+
+    // DownloadUserData analyses existing versions of the local items and downloads latest updates of the user's data from the server.
+    rpc DownloadUserData(DownloadUserDataRequest) returns (UserData);
 }
 
 message Item {
     ItemID item_id = 1;
-    oneof data {
-        Password password = 2;
-        Blob blob = 3;
-        Text text = 4;
-        Card card = 5;
+    uint64 version = 2;
+    oneof payload {
+        Password password = 3;
+        Blob blob = 4;
+        Text text = 5;
+        Card card = 6;
     }
-    google.protobuf.Timestamp created_at = 6;
-    google.protobuf.Timestamp deleted_at = 7;
+    google.protobuf.Timestamp created_at = 10;
+    google.protobuf.Timestamp deleted_at = 11;
     Metadata metadata = 100;
 }
 
@@ -69,7 +72,7 @@ message Card {
 }
 
 message UserData {
-    uint64 version = 1;
+    uint64 data_version = 1;
     repeated Item items = 2;
 }
 
@@ -110,9 +113,16 @@ message Event {
     Item item = 2;
 }
 
-message UserDataRequest {
+message WhatsNewRequest {
     AccessToken token = 1;
     uint64 data_version = 2;
+}
+
+message DownloadUserDataRequest {
+    AccessToken token = 1;
+    // version_map is a JSON table {"<item ID>": <item version>, ... }
+    // for all local items
+    string version_map = 2;
 }
 
 message PublishLocalChangesRequest {
