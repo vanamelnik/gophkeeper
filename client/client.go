@@ -12,7 +12,6 @@ import (
 	"github.com/vanamelnik/gophkeeper/models"
 	pb "github.com/vanamelnik/gophkeeper/proto"
 	"github.com/vanamelnik/gophkeeper/server/users"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -25,44 +24,47 @@ var (
 	ErrReloginNeeded = errors.New("relogin needed, session stopped")
 )
 
-type Client struct {
-	ctx context.Context
+type (
+	Client struct {
+		ctx context.Context
 
-	pbClient pb.GophkeeperClient
-	pbConn   *grpc.ClientConn
+		pbClient pb.GophkeeperClient
 
-	syncInterval time.Duration
-	sendInterval time.Duration
+		syncInterval time.Duration
+		sendInterval time.Duration
 
-	repo *repo.Repo
+		repo *repo.Repo
 
-	eventCh chan models.Event
-	closeCh chan struct{}
+		eventCh chan models.Event
+		closeCh chan struct{}
 
-	accessToken  models.AccessToken
-	refreshToken models.RefreshToken
+		accessToken  models.AccessToken
+		refreshToken models.RefreshToken
 
-	maxNumberOfRetries int
-}
+		maxNumberOfRetries int
+
+		conflictResolveFn ConflictResolveFn
+	}
+	// ConflictResolveFn is callback function that invokes for merge conflict resolving.
+	// If the user prefers the received item, the function returns true.
+	ConflictResolveFn func(recievedItem models.Item, localEntry repo.Entry) (userChooseReceivedItem bool)
+)
 
 // New creates new client session. The user should be logged in beforehand.
-func New(ctx context.Context,
-	serverAddr string,
+func New(
+	ctx context.Context,
+	pbClient pb.GophkeeperClient,
 	syncInterval,
 	sendInterval time.Duration,
 	storage *repo.Repo,
 	accessToken models.AccessToken,
-	refreshToken models.RefreshToken) (*Client, error) {
-	conn, err := grpc.DialContext(ctx, serverAddr)
-	if err != nil {
-		return nil, err
-	}
-	pbClient := pb.NewGophkeeperClient(conn)
+	refreshToken models.RefreshToken,
+	conflictResolveFn ConflictResolveFn,
+) (*Client, error) {
 
 	c := Client{
 		ctx:                ctx,
 		pbClient:           pbClient,
-		pbConn:             conn,
 		syncInterval:       syncInterval,
 		sendInterval:       sendInterval,
 		repo:               storage,
@@ -71,6 +73,7 @@ func New(ctx context.Context,
 		accessToken:        accessToken,
 		refreshToken:       refreshToken,
 		maxNumberOfRetries: maxRetries,
+		conflictResolveFn:  conflictResolveFn,
 	}
 	if err := c.WhatsNew(); err != nil {
 		log.Println("Could not start the client - problems with connection (see messages above). Relogin needed.")
@@ -81,7 +84,6 @@ func New(ctx context.Context,
 }
 
 func (c Client) Close() {
-	c.pbConn.Close()
 	if c.closeCh != nil {
 		close(c.closeCh)
 		c.closeCh = nil
