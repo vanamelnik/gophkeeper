@@ -7,17 +7,19 @@ import (
 	"github.com/vanamelnik/gophkeeper/models"
 )
 
-func (c Client) MergeItems(dataVersion uint64, items []models.Item) {
-	c.repo.RLock()
+func (c *Client) MergeItems(dataVersion uint64, items []models.Item) {
+	c.repo.Lock()
+	defer c.repo.Unlock()
 	for _, item := range items {
 		err := c.repo.MergeItem(item)
 		if err != nil {
-
+			c.processConflictResolving(item, err)
 		}
 	}
+	c.repo.StoreDataVersion(dataVersion)
 }
 
-func (c Client) processConflictResolving(receivedItem models.Item, err error) {
+func (c *Client) processConflictResolving(receivedItem models.Item, err error) {
 	if err == nil {
 		return
 	}
@@ -28,15 +30,9 @@ func (c Client) processConflictResolving(receivedItem models.Item, err error) {
 			c.repo.ForceMergeItem(receivedItem)
 			return
 		}
-		// else use the local item, but replace the version and publish it again.
-		mergedItem := models.Item{
-			ID:        ce.LocalEntry.Item.ID,
-			Version:   receivedItem.Version,
-			CreatedAt: ce.LocalEntry.Item.CreatedAt,
-			DeletedAt: ce.LocalEntry.Item.DeletedAt,
-			Payload:   ce.LocalEntry.Item.Payload,
-			Meta:      ce.LocalEntry.Item.Meta,
-		}
+		// else use the local item, but replace the version number and publish it again.
+		mergedItem := ce.LocalEntry.Item
+		mergedItem.Version = receivedItem.Version
 		c.repo.ForceMergeItem(mergedItem)
 		c.PublishEvent(models.Event{ // send this item again
 			Operation: models.OpUpdate,

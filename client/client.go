@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
+	"math"
 	"strings"
 	"time"
 
@@ -18,6 +19,8 @@ import (
 
 const (
 	maxRetries = 5
+
+	retrySleepBase = float64(4)
 )
 
 var (
@@ -44,6 +47,8 @@ type (
 		maxNumberOfRetries int
 
 		conflictResolveFn ConflictResolveFn
+
+		eventsPool []models.Event
 	}
 	// ConflictResolveFn is callback function that invokes for merge conflict resolving.
 	// If the user prefers the received item, the function returns true.
@@ -74,6 +79,7 @@ func New(
 		refreshToken:       refreshToken,
 		maxNumberOfRetries: maxRetries,
 		conflictResolveFn:  conflictResolveFn,
+		eventsPool:         make([]models.Event, 0),
 	}
 	if err := c.WhatsNew(); err != nil {
 		log.Println("Could not start the client - problems with connection (see messages above). Relogin needed.")
@@ -83,7 +89,7 @@ func New(
 	return &c, nil
 }
 
-func (c Client) Close() {
+func (c *Client) Close() {
 	if c.closeCh != nil {
 		close(c.closeCh)
 		c.closeCh = nil
@@ -91,18 +97,19 @@ func (c Client) Close() {
 }
 
 // PublishEvent sends the event to the queue of events waiting to be sent to the server.
-func (c Client) PublishEvent(event models.Event) {
+func (c *Client) PublishEvent(event models.Event) {
 	c.eventCh <- event
 }
 
 // WhatsNew sends the WhatsNew request to the server.
 // Multiple connection attempts are made. In case of failure, the user session ends.
-func (c Client) WhatsNew() error {
+// If the server presponses "update the data", GetUpdates function invoked.
+func (c *Client) WhatsNew() error {
 	request := &pb.WhatsNewRequest{
 		Token:       &pb.AccessToken{AccessToken: string(c.accessToken)},
 		DataVersion: c.repo.GetDataVersion(),
 	}
-	for tryCount := 0; tryCount < c.maxNumberOfRetries; tryCount++ {
+	for i := 0; i < c.maxNumberOfRetries; i++ {
 		_, err := c.pbClient.WhatsNew(c.ctx, request)
 		if err == nil { // Server responses "all is up to date"
 			return nil
@@ -114,26 +121,29 @@ func (c Client) WhatsNew() error {
 			if err != nil {
 				break
 			}
-			c.Merge(dataVersion, items)
+			c.MergeItems(dataVersion, items)
 			return nil
 		}
 
 		if st.Code() == codes.Unauthenticated {
 			if strings.Contains(err.Error(), users.ErrAccessTokenExpired.Error()) {
-				log.Printf("client: WhatsNew: %s; trying to renew the token pair")
+				log.Printf("client: WhatsNew: %s; trying to renew the token pair", err)
 				if err := c.RenewTokens(); err != nil { // try to renew the tokens
 					log.Printf("client: WhatsNew: %s; relogin needed", err)
-
+					log.Println("client: WhatsNew: tokens are refreshed, trying again")
 					break
 				}
+
 				continue // tokens are renewed - try again
 			}
 			log.Printf("client: WhatsNew: %s; relogin needed", err)
 			break // unathenticated and the problem isn't in expired access token - relogin needed
 		}
 		if st.Code() == codes.Internal { // if there is internal error - try again
-			log.Printf("client: WhatsNew: could not get WhatsNew information: %s", err)
-			continue
+			timeToWait := time.Millisecond * time.Duration(math.Pow(retrySleepBase, float64(i)))
+			log.Printf("client: WhatsNew: internal server error, try again in %v", timeToWait)
+			time.Sleep(timeToWait)
+			continue // internal server error - try again
 		}
 	}
 	return ErrReloginNeeded
@@ -142,7 +152,7 @@ func (c Client) WhatsNew() error {
 // GetUpdates fetches updates from the server.
 // Multiple connection attempts are made. In case of failure, the error "relogin nedded" returns.
 // Function panics if it could not marshall version map.
-func (c Client) GetUpdates() (uint64, []models.Item, error) {
+func (c *Client) GetUpdates() (uint64, []models.Item, error) {
 	versionMap := c.repo.BuildItemVersionMap()
 	versions, err := json.Marshal(versionMap)
 	if err != nil {
@@ -152,7 +162,7 @@ func (c Client) GetUpdates() (uint64, []models.Item, error) {
 		Token:      &pb.AccessToken{AccessToken: string(c.accessToken)},
 		VersionMap: string(versions),
 	}
-	for tryCount := 0; tryCount < c.maxNumberOfRetries; tryCount++ {
+	for i := 0; i < c.maxNumberOfRetries; i++ {
 		userData, err := c.pbClient.DownloadUserData(c.ctx, request)
 		if err == nil {
 			items := make([]models.Item, 0, len(userData.Items))
@@ -170,29 +180,74 @@ func (c Client) GetUpdates() (uint64, []models.Item, error) {
 		st, _ := status.FromError(err)
 		if st.Code() == codes.Unauthenticated {
 			if strings.Contains(err.Error(), users.ErrAccessTokenExpired.Error()) {
-				log.Printf("client: GetUpdates: %s; trying to renew the token pair")
+				log.Printf("client: GetUpdates: %s; trying to renew the token pair", err)
 				if err := c.RenewTokens(); err != nil { // try to renew the tokens
 					log.Printf("client: GetUpdates: %s; relogin needed", err)
 					break // could not renew the tokens - end the session!
 				}
+				log.Println("client: GetUpdates: tokens are refreshed, trying again")
 				continue // tokens are renewed, try again
 			}
 			log.Printf("client: GetUpdates: %s; relogin needed", err)
 			break // unauthenticated and problem isn't with expired access token - end the session!
 		}
 		if st.Code() == codes.Internal {
+			timeToWait := time.Millisecond * time.Duration(math.Pow(retrySleepBase, float64(i)))
+			log.Printf("client: GetUpdates: internal server error, try again in %v", timeToWait)
+			time.Sleep(timeToWait)
 			continue // internal server error - try again
 		}
 	}
 	return 0, nil, ErrReloginNeeded
 }
 
-func (c Client) sendEvents(event models.Event) {
-	// ...
+// sendEvents sends all accumulated events to the server.
+func (c *Client) sendEvents() error {
+	if len(c.eventsPool) == 0 {
+		return nil
+	}
+	events := make([]*pb.Event, 0, len(c.eventsPool))
+	for _, e := range c.eventsPool {
+		events = append(events, &pb.Event{
+			Operation: pb.Event_Operation(pb.Event_Operation_value[string(e.Operation)]),
+			Item:      models.ItemToPb(e.Item),
+		})
+	}
+	for i := 0; i < c.maxNumberOfRetries; i++ {
+		_, err := c.pbClient.PublishLocalChanges(c.ctx, &pb.PublishLocalChangesRequest{
+			Token:       &pb.AccessToken{AccessToken: string(c.accessToken)},
+			DataVersion: c.repo.GetDataVersion(),
+			Events:      events,
+		})
+		if err == nil {
+			return nil
+		}
+		st, _ := status.FromError(err)
+		if st.Code() == codes.Unauthenticated {
+			if strings.Contains(err.Error(), users.ErrAccessTokenExpired.Error()) {
+				log.Printf("client: sendEvents: %s; trying to renew the token pair", err)
+				if err := c.RenewTokens(); err != nil { // try to renew the tokens
+					log.Printf("client: sendEvents: %s; relogin needed", err)
+					break // could not renew the tokens - log out!
+				}
+				log.Println("client: sendEvents: tokens are refreshed, trying again")
+				continue // tokens are renewed, try again
+			}
+			log.Printf("client: sendEvents: %s; relogin needed", err)
+			break // unauthenticated and problem isn't with expired access token - log out!
+		}
+		if st.Code() == codes.Internal {
+			timeToWait := time.Millisecond * time.Duration(math.Pow(retrySleepBase, float64(i)))
+			log.Printf("client: sendEvents: internal server error, try again in %v", timeToWait)
+			time.Sleep(timeToWait)
+			continue // internal server error - try again
+		}
+	}
+	return ErrReloginNeeded
 }
 
 // worker periodically fetches updates from the server and sends local updates to the server.
-func (c Client) worker() {
+func (c *Client) worker() {
 	whatsNew := time.NewTicker(c.syncInterval)
 	defer whatsNew.Stop()
 	timeToSend := time.NewTicker(c.sendInterval)
@@ -206,10 +261,17 @@ func (c Client) worker() {
 			if err := c.WhatsNew(); err != nil {
 				log.Println("client: user relogin needed, session stopped")
 				c.Close() // Relogin needed
+				continue
 			}
 		case event := <-c.eventCh:
-			c.sendEvent(event)
+			c.eventsPool = append(c.eventsPool, event)
 		case <-timeToSend.C:
+			if err := c.sendEvents(); err != nil {
+				log.Println("client: user relogin needed, session stopped")
+				c.Close()
+				continue
+			}
+			c.eventsPool = c.eventsPool[:0] // if all events are successfully sent, clear the events pool
 		}
 	}
 }

@@ -8,7 +8,7 @@ import (
 )
 
 // RenewTokens sends the refresh token to the server and renews client's accessToken and refreshToken.
-func (c Client) RenewTokens() error {
+func (c *Client) RenewTokens() error {
 	userAuth, err := c.pbClient.GetNewTokens(c.ctx, &proto.RefreshToken{RefreshToken: string(c.refreshToken)})
 	if err != nil {
 		log.Printf("client: could not get new pair of tokens, relogin needed: %s", err)

@@ -41,7 +41,7 @@ type (
 
 // CreatePassword creates a new Password item, stores it in local repository
 // and and queues an event to publish it to the server.
-func (c Client) CreatePassword(p Password) error {
+func (c *Client) CreatePassword(p Password) error {
 	password, err := PasswordToItem(p)
 	if err != nil {
 		return err
@@ -58,7 +58,7 @@ func (c Client) CreatePassword(p Password) error {
 
 // CreateCard creates a new Card item, stores it in local repository
 // and and queues an event to publish it to the server.
-func (c Client) CreateCard(cc CreditCard) error {
+func (c *Client) CreateCard(cc CreditCard) error {
 	card, err := CardToItem(cc)
 	if err != nil {
 		return err
@@ -75,7 +75,7 @@ func (c Client) CreateCard(cc CreditCard) error {
 
 // CreateBlob creates a new Blob item, stores it in local repository
 // and and queues an event to publish it to the server.
-func (c Client) CreateBlob(b Blob) error {
+func (c *Client) CreateBlob(b Blob) error {
 	blob, err := BlobToItem(b)
 	if err != nil {
 		return err
@@ -92,7 +92,7 @@ func (c Client) CreateBlob(b Blob) error {
 
 // CreateText creates a new Text item, stores it in local repository
 // and queues an event to publish it to the server.
-func (c Client) CreateText(t Text) error {
+func (c *Client) CreateText(t Text) error {
 	text, err := TextToItem(t)
 	if err != nil {
 		return err
@@ -109,7 +109,7 @@ func (c Client) CreateText(t Text) error {
 
 // UpdatePassword updates a password in the local repository
 // and queues an event to publish the changes.
-func (c Client) UpdatePassword(p Password) error {
+func (c *Client) UpdatePassword(p Password) error {
 	password, err := PasswordToItem(p)
 	if err != nil {
 		return err
@@ -126,7 +126,7 @@ func (c Client) UpdatePassword(p Password) error {
 
 // UpdateText updates a text item in the local repository
 // and queues an event to publish the changes.
-func (c Client) UpdateText(t Text) error {
+func (c *Client) UpdateText(t Text) error {
 	text, err := TextToItem(t)
 	if err != nil {
 		return err
@@ -143,7 +143,7 @@ func (c Client) UpdateText(t Text) error {
 
 // UpdateBlob updates a binary item in the local repository
 // and queues an event to publish the changes.
-func (c Client) UpdateBlob(b Blob) error {
+func (c *Client) UpdateBlob(b Blob) error {
 	blob, err := BlobToItem(b)
 	if err != nil {
 		return err
@@ -160,7 +160,7 @@ func (c Client) UpdateBlob(b Blob) error {
 
 // UpdateCard updates a card in the local repository
 // and queues an event to publish the changes.
-func (c Client) UpdateCard(card CreditCard) error {
+func (c *Client) UpdateCard(card CreditCard) error {
 	creditCard, err := CardToItem(card)
 	if err != nil {
 		return err

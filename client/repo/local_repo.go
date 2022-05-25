@@ -135,3 +135,8 @@ func (r *Repo) BuildItemVersionMap() map[uuid.UUID]uint64 {
 	}
 	return versions
 }
+
+// StoreDataVersion changes dataVersion field in Repo object.
+func (r *Repo) StoreDataVersion(dataVersion uint64) {
+	r.dataVersion = dataVersion
+}

@@ -46,8 +46,6 @@ func (r *Repo) MergeItem(receivedItem models.Item) error {
 // 'Pending' flag is unset.
 // Contract: repo must be locked.
 func (r *Repo) ForceMergeItem(item models.Item) {
-	r.RLock()
-	defer r.RUnlock()
 	for i, entry := range r.entries {
 		if entry.Item.ID == item.ID {
 			r.entries[i].Item = item
