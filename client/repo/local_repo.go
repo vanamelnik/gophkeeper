@@ -29,16 +29,23 @@ type (
 		// Items contains user data wrapped in Item struct (with Pending flag).
 		entries []Entry
 
-		// fileName is the name of the file in .gob format that contains
-		// current snapshot of local user data.
-		fileName string
-		// flushInterval is the interval after which the file is updated if isChange flag is set.
-		flushInterval time.Duration
+		// // fileName is the name of the file in .gob format that contains
+		// // current snapshot of local user data.
+		// fileName string
+		// // flushInterval is the interval after which the file is updated if isChange flag is set.
+		// flushInterval time.Duration
 
-		// isChanged indicates if local user data has been changed and needs to be stored in the file.
-		isChanged bool
+		// // isChanged indicates if local user data has been changed and needs to be stored in the file.
+		// isChanged bool
 	}
 )
+
+func New() *Repo {
+	return &Repo{
+		dataVersion: 0,
+		entries:     make([]Entry, 0),
+	}
+}
 
 // CreateItem stores user data to the local repository and marks it as 'pending'.
 func (r *Repo) CreateItem(item models.Item) error {

@@ -28,28 +28,36 @@ var (
 )
 
 type (
+	// Client represents client interaction with the Gophkeeper server and the local storage.
 	Client struct {
 		ctx context.Context
 
 		pbClient pb.GophkeeperClient
 
+		// syncInterval - updates download interval.
 		syncInterval time.Duration
+		// sendInterval - interval for sending local updates to the serverю
 		sendInterval time.Duration
 
+		// repo is local items repository
 		repo *repo.Repo
 
 		eventCh chan models.Event
 		closeCh chan struct{}
 
+		// auth tokens pair
 		accessToken  models.AccessToken
 		refreshToken models.RefreshToken
 
 		maxNumberOfRetries int
 
+		// conflictResolveFn - callback function for resolving merge conflicts by the user.
 		conflictResolveFn ConflictResolveFn
 
+		// eventsPool is the place where unsrnt events accumulate.
 		eventsPool []models.Event
 	}
+
 	// ConflictResolveFn is callback function that invokes for merge conflict resolving.
 	// If the user prefers the received item, the function returns true.
 	ConflictResolveFn func(recievedItem models.Item, localEntry repo.Entry) (userChooseReceivedItem bool)
@@ -133,7 +141,6 @@ func (c *Client) WhatsNew() error {
 					log.Println("client: WhatsNew: tokens are refreshed, trying again")
 					break
 				}
-
 				continue // tokens are renewed - try again
 			}
 			log.Printf("client: WhatsNew: %s; relogin needed", err)
