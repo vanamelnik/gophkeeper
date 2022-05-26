@@ -14,14 +14,21 @@ func PbToItem(item *pb.Item) (Item, error) {
 		return Item{}, err
 	}
 	createdAt := item.CreatedAt.AsTime()
-	deletedAt := item.DeletedAt.AsTime()
 	result := Item{
 		ID:        itemID,
 		Version:   item.Version,
 		CreatedAt: &createdAt,
-		DeletedAt: &deletedAt,
+		DeletedAt: nil,
 		Meta:      JSONMetadata(item.Metadata.Metadata),
 	}
+	if item.DeletedAt != nil {
+		if !item.DeletedAt.IsValid() {
+			return Item{}, errors.New("incorrect DeletedAt field")
+		}
+		deletedAt := item.DeletedAt.AsTime()
+		result.DeletedAt = &deletedAt
+	}
+
 	switch pl := item.Payload.(type) {
 	case *pb.Item_Blob:
 		result.Payload = BinaryData{pl.Blob.Data}

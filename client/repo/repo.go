@@ -29,21 +29,30 @@ type (
 		// Items contains user data wrapped in Item struct (with Pending flag).
 		entries []Entry
 
+		// Auth token pair could be stored in the .gob file with with the rest of the data.
+		// If these fields are empty, this is interpreted as not having an active session.
+		accessToken  models.AccessToken
+		refreshToken models.RefreshToken
+
+		// TODO: сделать сервис хранения репозитория в gob-файле:
 		// // fileName is the name of the file in .gob format that contains
 		// // current snapshot of local user data.
 		// fileName string
 		// // flushInterval is the interval after which the file is updated if isChange flag is set.
 		// flushInterval time.Duration
 
-		// // isChanged indicates if local user data has been changed and needs to be stored in the file.
-		// isChanged bool
+		// isChanged indicates if local user data has been changed and needs to be stored in the file.
+		isChanged bool
 	}
 )
 
 func New() *Repo {
 	return &Repo{
-		dataVersion: 0,
-		entries:     make([]Entry, 0),
+		dataVersion:  0,
+		entries:      make([]Entry, 0),
+		accessToken:  "",
+		refreshToken: "",
+		isChanged:    false,
 	}
 }
 
@@ -61,6 +70,7 @@ func (r *Repo) CreateItem(item models.Item) error {
 		Item:    item,
 		Pending: true,
 	})
+	r.isChanged = true
 
 	return nil
 }
@@ -78,9 +88,12 @@ func (r *Repo) UpdateItem(item models.Item) error {
 				Item:    item,
 				Pending: true,
 			}
+
+			r.isChanged = true
 			return nil
 		}
 	}
+
 	return ErrNotFound
 }
 
@@ -101,6 +114,7 @@ func (r *Repo) DeleteItem(itemID uuid.UUID) error {
 				},
 				Pending: true,
 			}
+			r.isChanged = true
 			return nil
 		}
 	}
@@ -146,4 +160,27 @@ func (r *Repo) BuildItemVersionMap() map[uuid.UUID]uint64 {
 // StoreDataVersion changes dataVersion field in Repo object.
 func (r *Repo) StoreDataVersion(dataVersion uint64) {
 	r.dataVersion = dataVersion
+	r.isChanged = true
+}
+
+func (r *Repo) StoreAccessToken(token models.AccessToken) {
+	r.Lock()
+	defer r.Unlock()
+	r.accessToken = token
+	r.isChanged = true
+}
+
+func (r *Repo) GetAccessToken() models.AccessToken {
+	return r.accessToken
+}
+
+func (r *Repo) StoreRefreshToken(token models.RefreshToken) {
+	r.Lock()
+	defer r.Unlock()
+	r.refreshToken = token
+	r.isChanged = true
+}
+
+func (r *Repo) GetRefreshToken() models.RefreshToken {
+	return r.refreshToken
 }

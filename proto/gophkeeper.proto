@@ -19,6 +19,7 @@ service gophkeeper {
     rpc GetNewTokens(RefreshToken) returns (UserAuth);
     // LogOut ends current user session.
     rpc LogOut(RefreshToken) returns (google.protobuf.Empty);
+
     // TODO:
     // ChangePassword
     // DeleteUser
@@ -31,7 +32,7 @@ service gophkeeper {
     rpc PublishLocalChanges(PublishLocalChangesRequest) returns (google.protobuf.Empty);
 
     // WhatsNew compares provided Data Version with such one stored on the server. If they are the same,
-    // nil error is returned. Otherwise, the "NotFound" code and the error "update the data" is returned.
+    // nil error is returned. Otherwise, the "PermissionDenied" code and the error "out of date" is returned.
     rpc WhatsNew(WhatsNewRequest) returns (google.protobuf.Empty);
 
     // DownloadUserData analyses existing versions of the local items and downloads latest updates of the user's data from the server.

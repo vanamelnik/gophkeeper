@@ -45,10 +45,6 @@ type (
 		eventCh chan models.Event
 		closeCh chan struct{}
 
-		// auth tokens pair
-		accessToken  models.AccessToken
-		refreshToken models.RefreshToken
-
 		maxNumberOfRetries int
 
 		// conflictResolveFn - callback function for resolving merge conflicts by the user.
@@ -83,12 +79,15 @@ func New(
 		repo:               storage,
 		eventCh:            make(chan models.Event, 1),
 		closeCh:            make(chan struct{}),
-		accessToken:        accessToken,
-		refreshToken:       refreshToken,
 		maxNumberOfRetries: maxRetries,
 		conflictResolveFn:  conflictResolveFn,
 		eventsPool:         make([]models.Event, 0),
 	}
+
+	// store auth token pair
+	c.repo.StoreAccessToken(accessToken)
+	c.repo.StoreRefreshToken(refreshToken)
+
 	if err := c.WhatsNew(); err != nil {
 		log.Println("Could not start the client - problems with connection (see messages above). Relogin needed.")
 		return nil, ErrReloginNeeded
@@ -114,7 +113,7 @@ func (c *Client) PublishEvent(event models.Event) {
 // If the server presponses "update the data", GetUpdates function invoked.
 func (c *Client) WhatsNew() error {
 	request := &pb.WhatsNewRequest{
-		Token:       &pb.AccessToken{AccessToken: string(c.accessToken)},
+		Token:       &pb.AccessToken{AccessToken: string(c.repo.GetAccessToken())},
 		DataVersion: c.repo.GetDataVersion(),
 	}
 	for i := 0; i < c.maxNumberOfRetries; i++ {
@@ -124,11 +123,13 @@ func (c *Client) WhatsNew() error {
 		}
 
 		st, _ := status.FromError(err)
-		if st.Code() == codes.NotFound { // Server responses "update the data"
+		if st.Code() == codes.PermissionDenied { // Server responses "update the data"
+			// get updates from the server
 			dataVersion, items, err := c.GetUpdates()
 			if err != nil {
 				break
 			}
+			// merge updates
 			c.MergeItems(dataVersion, items)
 			return nil
 		}
@@ -166,7 +167,7 @@ func (c *Client) GetUpdates() (uint64, []models.Item, error) {
 		log.Fatalf("client: GetUpdates: could not marshall the map: %s", err)
 	}
 	request := &pb.DownloadUserDataRequest{
-		Token:      &pb.AccessToken{AccessToken: string(c.accessToken)},
+		Token:      &pb.AccessToken{AccessToken: string(c.repo.GetAccessToken())},
 		VersionMap: string(versions),
 	}
 	for i := 0; i < c.maxNumberOfRetries; i++ {
@@ -222,7 +223,7 @@ func (c *Client) sendEvents() error {
 	}
 	for i := 0; i < c.maxNumberOfRetries; i++ {
 		_, err := c.pbClient.PublishLocalChanges(c.ctx, &pb.PublishLocalChangesRequest{
-			Token:       &pb.AccessToken{AccessToken: string(c.accessToken)},
+			Token:       &pb.AccessToken{AccessToken: string(c.repo.GetAccessToken())},
 			DataVersion: c.repo.GetDataVersion(),
 			Events:      events,
 		})

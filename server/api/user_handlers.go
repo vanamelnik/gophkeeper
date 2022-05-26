@@ -36,7 +36,7 @@ func (s Server) SignUp(ctx context.Context, data *pb.SignInData) (*pb.UserAuth, 
 	return &pb.UserAuth{
 		AccessToken:  &pb.AccessToken{AccessToken: string(accessToken)},
 		RefreshToken: &pb.RefreshToken{RefreshToken: string(refreshToken)},
-	}, err
+	}, nil
 }
 
 // LogIn implements GophkeeperServer interface.

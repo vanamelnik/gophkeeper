@@ -27,17 +27,25 @@ func NewGophkeeper(db storage.Storage) Service {
 	}
 }
 
-// GetUserData retrieves a snapshot of all user's items in storage.
-// If the version of the data is equal to the version provided, the ErrVersionUpToDate is thrown.
-func (s Service) GetUserData(ctx context.Context, userID uuid.UUID, version uint64) (*models.UserData, error) {
+// GetUserData returns the new items and the newer versions of existing local items from the database according to the version map provided.
+func (s Service) GetUserData(ctx context.Context, userID uuid.UUID, versionMap map[uuid.UUID]uint64) (*models.UserData, error) {
 	data, err := s.storage.GetUserData(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
-	if version == data.Version {
-		return nil, ErrVersionUpToDate
+	updates := models.UserData{
+		Version: data.Version,
+		Items:   make([]models.Item, 0, len(data.Items)),
 	}
-	return data, nil
+	for _, item := range data.Items {
+		localVersion, ok := versionMap[item.ID]
+		if !ok || // we have a new item
+			localVersion != item.Version { // we have a newer version of this item
+			updates.Items = append(updates.Items, item)
+		}
+	}
+
+	return &updates, nil
 }
 
 // PublishUserData applies local changes of user data to the database.
