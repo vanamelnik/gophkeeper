@@ -3,64 +3,83 @@
 */
 syntax="proto3";
 
+package proto;
 option go_package="./proto";
 
-package proto;
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
 
 service gophkeeper {
+    // SignUp registers a new user and creates a new user session.
     rpc SignUp(SignInData) returns (UserAuth);
+    // LogIn creates a new session for the user provided.
     rpc LogIn(SignInData) returns (UserAuth);
-    rpc GetAccessToken(RefreshToken) returns (AccessToken);
+    // GetNewTokens generates a new AccessToken + RefreshToken pair.
+    // If refresh token is expired, the session ends.
+    rpc GetNewTokens(RefreshToken) returns (UserAuth);
+    // LogOut ends current user session.
+    rpc LogOut(RefreshToken) returns (google.protobuf.Empty);
 
-    rpc StorePassword(StorePasswordRequest) returns(ItemID);
-    rpc StoreBlob(StoreBlobRequest) returns (ItemID);
-    rpc StoreText(StoreTextRequest) returns (ItemID);
-    rpc StoreCard(StoreCardRequest) returns (ItemID);
+    // TODO:
+    // ChangePassword
+    // DeleteUser
+    // LogoutAllSessions - выйти отовсюду для данного пользователя
 
-    rpc GetData(AccessToken) returns (Data);
+    // PublishLocalChanges applies the changes to the storage on the server.
+    // This method is allowed only if the version of user's data on the client side is equal
+    // to the version number on the server. Otherwise the error is returned and the client 
+    // must first update data from the server.
+    rpc PublishLocalChanges(PublishLocalChangesRequest) returns (google.protobuf.Empty);
+
+    // WhatsNew compares provided Data Version with such one stored on the server. If they are the same,
+    // nil error is returned. Otherwise, the "PermissionDenied" code and the error "out of date" is returned.
+    rpc WhatsNew(WhatsNewRequest) returns (google.protobuf.Empty);
+
+    // DownloadUserData analyses existing versions of the local items and downloads latest updates of the user's data from the server.
+    rpc DownloadUserData(DownloadUserDataRequest) returns (UserData);
+}
+
+message Item {
+    ItemID item_id = 1;
+    uint64 version = 2;
+    oneof payload {
+        Password password = 3;
+        Blob blob = 4;
+        Text text = 5;
+        Card card = 6;
+    }
+    google.protobuf.Timestamp created_at = 10;
+    google.protobuf.Timestamp deleted_at = 11;
+    Metadata metadata = 100;
 }
 
 message Password {
-    ItemID item_id = 1;
-    repeated MetaData meta = 2;
-
-    string password = 3;
+    string password = 1;
 }
 
 message Blob {
-    ItemID item_id = 1;
-    repeated MetaData meta = 2;
-
-    bytes data = 3;
+    bytes data = 1;
 }
 
 message Text {
-    ItemID item_id = 1;
-    repeated MetaData meta = 2;
-
-    string text = 3;
+    string text = 1;
 }
 
 message Card {
-    ItemID item_id = 1;
-    repeated MetaData meta = 2;
-
-    string number = 3;
-    string name = 4;
-    string date = 5;
-    uint32 cvc = 6;
+    string number = 1;
+    string name = 2;
+    string date = 3;
+    uint32 cvc = 4;
 }
 
-message Data {
-    repeated Password passwords = 1;
-    repeated Blob blobs = 2;
-    repeated Text texts = 3;
-    repeated Card cards = 4;
+message UserData {
+    uint64 data_version = 1;
+    repeated Item items = 2;
 }
 
-message MetaData {
-    string key = 1;
-    string value = 2;
+// Metadata is JSON string with metadata key:value pairs.
+message Metadata {
+    string metadata = 1;
 }
 
 message ItemID {
@@ -85,22 +104,30 @@ message SignInData {
     string user_password = 2;
 }
 
-message StorePasswordRequest {
-    AccessToken access_token = 1;
-    Password password = 2;
+message Event {
+    enum Operation {
+        CREATE = 0;
+        UPDATE = 1;
+        DELETE = 2;
+    }
+    Operation operation = 1;
+    Item item = 2;
 }
 
-message StoreBlobRequest {
-    AccessToken access_token = 1;
-    Blob blob = 2;
+message WhatsNewRequest {
+    AccessToken token = 1;
+    uint64 data_version = 2;
 }
 
-message StoreTextRequest {
-    AccessToken access_token = 1;
-    Text text = 2;
+message DownloadUserDataRequest {
+    AccessToken token = 1;
+    // version_map is a JSON table {"<item ID>": <item version>, ... }
+    // for all local items
+    string version_map = 2;
 }
 
-message StoreCardRequest {
-    AccessToken access_token = 1;
-    Card card = 2;
+message PublishLocalChangesRequest {
+    AccessToken token = 1;
+    uint64 data_version = 2;
+    repeated Event events = 3;
 }

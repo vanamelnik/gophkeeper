@@ -11,6 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -22,14 +23,25 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type GophkeeperClient interface {
+	// SignUp registers a new user and creates a new user session.
 	SignUp(ctx context.Context, in *SignInData, opts ...grpc.CallOption) (*UserAuth, error)
+	// LogIn creates a new session for the user provided.
 	LogIn(ctx context.Context, in *SignInData, opts ...grpc.CallOption) (*UserAuth, error)
-	GetAccessToken(ctx context.Context, in *RefreshToken, opts ...grpc.CallOption) (*AccessToken, error)
-	StorePassword(ctx context.Context, in *StorePasswordRequest, opts ...grpc.CallOption) (*ItemID, error)
-	StoreBlob(ctx context.Context, in *StoreBlobRequest, opts ...grpc.CallOption) (*ItemID, error)
-	StoreText(ctx context.Context, in *StoreTextRequest, opts ...grpc.CallOption) (*ItemID, error)
-	StoreCard(ctx context.Context, in *StoreCardRequest, opts ...grpc.CallOption) (*ItemID, error)
-	GetData(ctx context.Context, in *AccessToken, opts ...grpc.CallOption) (*Data, error)
+	// GetNewTokens generates a new AccessToken + RefreshToken pair.
+	// If refresh token is expired, the session ends.
+	GetNewTokens(ctx context.Context, in *RefreshToken, opts ...grpc.CallOption) (*UserAuth, error)
+	// LogOut ends current user session.
+	LogOut(ctx context.Context, in *RefreshToken, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// PublishLocalChanges applies the changes to the storage on the server.
+	// This method is allowed only if the version of user's data on the client side is equal
+	// to the version number on the server. Otherwise the error is returned and the client
+	// must first update data from the server.
+	PublishLocalChanges(ctx context.Context, in *PublishLocalChangesRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// WhatsNew compares provided Data Version with such one stored on the server. If they are the same,
+	// OK status is returned. Otherwise, the error "update the data" is returned.
+	WhatsNew(ctx context.Context, in *WhatsNewRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// DownloadUserData analyses existing versions of the local items and downloads latest updates of the user's data from the server.
+	DownloadUserData(ctx context.Context, in *DownloadUserDataRequest, opts ...grpc.CallOption) (*UserData, error)
 }
 
 type gophkeeperClient struct {
@@ -58,54 +70,45 @@ func (c *gophkeeperClient) LogIn(ctx context.Context, in *SignInData, opts ...gr
 	return out, nil
 }
 
-func (c *gophkeeperClient) GetAccessToken(ctx context.Context, in *RefreshToken, opts ...grpc.CallOption) (*AccessToken, error) {
-	out := new(AccessToken)
-	err := c.cc.Invoke(ctx, "/proto.gophkeeper/GetAccessToken", in, out, opts...)
+func (c *gophkeeperClient) GetNewTokens(ctx context.Context, in *RefreshToken, opts ...grpc.CallOption) (*UserAuth, error) {
+	out := new(UserAuth)
+	err := c.cc.Invoke(ctx, "/proto.gophkeeper/GetNewTokens", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *gophkeeperClient) StorePassword(ctx context.Context, in *StorePasswordRequest, opts ...grpc.CallOption) (*ItemID, error) {
-	out := new(ItemID)
-	err := c.cc.Invoke(ctx, "/proto.gophkeeper/StorePassword", in, out, opts...)
+func (c *gophkeeperClient) LogOut(ctx context.Context, in *RefreshToken, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/proto.gophkeeper/LogOut", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *gophkeeperClient) StoreBlob(ctx context.Context, in *StoreBlobRequest, opts ...grpc.CallOption) (*ItemID, error) {
-	out := new(ItemID)
-	err := c.cc.Invoke(ctx, "/proto.gophkeeper/StoreBlob", in, out, opts...)
+func (c *gophkeeperClient) PublishLocalChanges(ctx context.Context, in *PublishLocalChangesRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/proto.gophkeeper/PublishLocalChanges", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *gophkeeperClient) StoreText(ctx context.Context, in *StoreTextRequest, opts ...grpc.CallOption) (*ItemID, error) {
-	out := new(ItemID)
-	err := c.cc.Invoke(ctx, "/proto.gophkeeper/StoreText", in, out, opts...)
+func (c *gophkeeperClient) WhatsNew(ctx context.Context, in *WhatsNewRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/proto.gophkeeper/WhatsNew", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *gophkeeperClient) StoreCard(ctx context.Context, in *StoreCardRequest, opts ...grpc.CallOption) (*ItemID, error) {
-	out := new(ItemID)
-	err := c.cc.Invoke(ctx, "/proto.gophkeeper/StoreCard", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *gophkeeperClient) GetData(ctx context.Context, in *AccessToken, opts ...grpc.CallOption) (*Data, error) {
-	out := new(Data)
-	err := c.cc.Invoke(ctx, "/proto.gophkeeper/GetData", in, out, opts...)
+func (c *gophkeeperClient) DownloadUserData(ctx context.Context, in *DownloadUserDataRequest, opts ...grpc.CallOption) (*UserData, error) {
+	out := new(UserData)
+	err := c.cc.Invoke(ctx, "/proto.gophkeeper/DownloadUserData", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -116,14 +119,25 @@ func (c *gophkeeperClient) GetData(ctx context.Context, in *AccessToken, opts ..
 // All implementations must embed UnimplementedGophkeeperServer
 // for forward compatibility
 type GophkeeperServer interface {
+	// SignUp registers a new user and creates a new user session.
 	SignUp(context.Context, *SignInData) (*UserAuth, error)
+	// LogIn creates a new session for the user provided.
 	LogIn(context.Context, *SignInData) (*UserAuth, error)
-	GetAccessToken(context.Context, *RefreshToken) (*AccessToken, error)
-	StorePassword(context.Context, *StorePasswordRequest) (*ItemID, error)
-	StoreBlob(context.Context, *StoreBlobRequest) (*ItemID, error)
-	StoreText(context.Context, *StoreTextRequest) (*ItemID, error)
-	StoreCard(context.Context, *StoreCardRequest) (*ItemID, error)
-	GetData(context.Context, *AccessToken) (*Data, error)
+	// GetNewTokens generates a new AccessToken + RefreshToken pair.
+	// If refresh token is expired, the session ends.
+	GetNewTokens(context.Context, *RefreshToken) (*UserAuth, error)
+	// LogOut ends current user session.
+	LogOut(context.Context, *RefreshToken) (*emptypb.Empty, error)
+	// PublishLocalChanges applies the changes to the storage on the server.
+	// This method is allowed only if the version of user's data on the client side is equal
+	// to the version number on the server. Otherwise the error is returned and the client
+	// must first update data from the server.
+	PublishLocalChanges(context.Context, *PublishLocalChangesRequest) (*emptypb.Empty, error)
+	// WhatsNew compares provided Data Version with such one stored on the server. If they are the same,
+	// OK status is returned. Otherwise, the error "update the data" is returned.
+	WhatsNew(context.Context, *WhatsNewRequest) (*emptypb.Empty, error)
+	// DownloadUserData analyses existing versions of the local items and downloads latest updates of the user's data from the server.
+	DownloadUserData(context.Context, *DownloadUserDataRequest) (*UserData, error)
 	mustEmbedUnimplementedGophkeeperServer()
 }
 
@@ -137,23 +151,20 @@ func (UnimplementedGophkeeperServer) SignUp(context.Context, *SignInData) (*User
 func (UnimplementedGophkeeperServer) LogIn(context.Context, *SignInData) (*UserAuth, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LogIn not implemented")
 }
-func (UnimplementedGophkeeperServer) GetAccessToken(context.Context, *RefreshToken) (*AccessToken, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetAccessToken not implemented")
+func (UnimplementedGophkeeperServer) GetNewTokens(context.Context, *RefreshToken) (*UserAuth, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetNewTokens not implemented")
 }
-func (UnimplementedGophkeeperServer) StorePassword(context.Context, *StorePasswordRequest) (*ItemID, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method StorePassword not implemented")
+func (UnimplementedGophkeeperServer) LogOut(context.Context, *RefreshToken) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method LogOut not implemented")
 }
-func (UnimplementedGophkeeperServer) StoreBlob(context.Context, *StoreBlobRequest) (*ItemID, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method StoreBlob not implemented")
+func (UnimplementedGophkeeperServer) PublishLocalChanges(context.Context, *PublishLocalChangesRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PublishLocalChanges not implemented")
 }
-func (UnimplementedGophkeeperServer) StoreText(context.Context, *StoreTextRequest) (*ItemID, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method StoreText not implemented")
+func (UnimplementedGophkeeperServer) WhatsNew(context.Context, *WhatsNewRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method WhatsNew not implemented")
 }
-func (UnimplementedGophkeeperServer) StoreCard(context.Context, *StoreCardRequest) (*ItemID, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method StoreCard not implemented")
-}
-func (UnimplementedGophkeeperServer) GetData(context.Context, *AccessToken) (*Data, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetData not implemented")
+func (UnimplementedGophkeeperServer) DownloadUserData(context.Context, *DownloadUserDataRequest) (*UserData, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DownloadUserData not implemented")
 }
 func (UnimplementedGophkeeperServer) mustEmbedUnimplementedGophkeeperServer() {}
 
@@ -204,110 +215,92 @@ func _Gophkeeper_LogIn_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Gophkeeper_GetAccessToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Gophkeeper_GetNewTokens_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RefreshToken)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(GophkeeperServer).GetAccessToken(ctx, in)
+		return srv.(GophkeeperServer).GetNewTokens(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.gophkeeper/GetAccessToken",
+		FullMethod: "/proto.gophkeeper/GetNewTokens",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GophkeeperServer).GetAccessToken(ctx, req.(*RefreshToken))
+		return srv.(GophkeeperServer).GetNewTokens(ctx, req.(*RefreshToken))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Gophkeeper_StorePassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(StorePasswordRequest)
+func _Gophkeeper_LogOut_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RefreshToken)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(GophkeeperServer).StorePassword(ctx, in)
+		return srv.(GophkeeperServer).LogOut(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.gophkeeper/StorePassword",
+		FullMethod: "/proto.gophkeeper/LogOut",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GophkeeperServer).StorePassword(ctx, req.(*StorePasswordRequest))
+		return srv.(GophkeeperServer).LogOut(ctx, req.(*RefreshToken))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Gophkeeper_StoreBlob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(StoreBlobRequest)
+func _Gophkeeper_PublishLocalChanges_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PublishLocalChangesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(GophkeeperServer).StoreBlob(ctx, in)
+		return srv.(GophkeeperServer).PublishLocalChanges(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.gophkeeper/StoreBlob",
+		FullMethod: "/proto.gophkeeper/PublishLocalChanges",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GophkeeperServer).StoreBlob(ctx, req.(*StoreBlobRequest))
+		return srv.(GophkeeperServer).PublishLocalChanges(ctx, req.(*PublishLocalChangesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Gophkeeper_StoreText_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(StoreTextRequest)
+func _Gophkeeper_WhatsNew_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(WhatsNewRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(GophkeeperServer).StoreText(ctx, in)
+		return srv.(GophkeeperServer).WhatsNew(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.gophkeeper/StoreText",
+		FullMethod: "/proto.gophkeeper/WhatsNew",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GophkeeperServer).StoreText(ctx, req.(*StoreTextRequest))
+		return srv.(GophkeeperServer).WhatsNew(ctx, req.(*WhatsNewRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Gophkeeper_StoreCard_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(StoreCardRequest)
+func _Gophkeeper_DownloadUserData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DownloadUserDataRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(GophkeeperServer).StoreCard(ctx, in)
+		return srv.(GophkeeperServer).DownloadUserData(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.gophkeeper/StoreCard",
+		FullMethod: "/proto.gophkeeper/DownloadUserData",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GophkeeperServer).StoreCard(ctx, req.(*StoreCardRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Gophkeeper_GetData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AccessToken)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(GophkeeperServer).GetData(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/proto.gophkeeper/GetData",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GophkeeperServer).GetData(ctx, req.(*AccessToken))
+		return srv.(GophkeeperServer).DownloadUserData(ctx, req.(*DownloadUserDataRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -328,28 +321,24 @@ var Gophkeeper_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Gophkeeper_LogIn_Handler,
 		},
 		{
-			MethodName: "GetAccessToken",
-			Handler:    _Gophkeeper_GetAccessToken_Handler,
+			MethodName: "GetNewTokens",
+			Handler:    _Gophkeeper_GetNewTokens_Handler,
 		},
 		{
-			MethodName: "StorePassword",
-			Handler:    _Gophkeeper_StorePassword_Handler,
+			MethodName: "LogOut",
+			Handler:    _Gophkeeper_LogOut_Handler,
 		},
 		{
-			MethodName: "StoreBlob",
-			Handler:    _Gophkeeper_StoreBlob_Handler,
+			MethodName: "PublishLocalChanges",
+			Handler:    _Gophkeeper_PublishLocalChanges_Handler,
 		},
 		{
-			MethodName: "StoreText",
-			Handler:    _Gophkeeper_StoreText_Handler,
+			MethodName: "WhatsNew",
+			Handler:    _Gophkeeper_WhatsNew_Handler,
 		},
 		{
-			MethodName: "StoreCard",
-			Handler:    _Gophkeeper_StoreCard_Handler,
-		},
-		{
-			MethodName: "GetData",
-			Handler:    _Gophkeeper_GetData_Handler,
+			MethodName: "DownloadUserData",
+			Handler:    _Gophkeeper_DownloadUserData_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
