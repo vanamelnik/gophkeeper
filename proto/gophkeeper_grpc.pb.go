@@ -38,7 +38,7 @@ type GophkeeperClient interface {
 	// must first update data from the server.
 	PublishLocalChanges(ctx context.Context, in *PublishLocalChangesRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// WhatsNew compares provided Data Version with such one stored on the server. If they are the same,
-	// OK status is returned. Otherwise, the error "update the data" is returned.
+	// nil error is returned. Otherwise, the "PermissionDenied" code and the error "out of date" is returned.
 	WhatsNew(ctx context.Context, in *WhatsNewRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// DownloadUserData analyses existing versions of the local items and downloads latest updates of the user's data from the server.
 	DownloadUserData(ctx context.Context, in *DownloadUserDataRequest, opts ...grpc.CallOption) (*UserData, error)
@@ -134,7 +134,7 @@ type GophkeeperServer interface {
 	// must first update data from the server.
 	PublishLocalChanges(context.Context, *PublishLocalChangesRequest) (*emptypb.Empty, error)
 	// WhatsNew compares provided Data Version with such one stored on the server. If they are the same,
-	// OK status is returned. Otherwise, the error "update the data" is returned.
+	// nil error is returned. Otherwise, the "PermissionDenied" code and the error "out of date" is returned.
 	WhatsNew(context.Context, *WhatsNewRequest) (*emptypb.Empty, error)
 	// DownloadUserData analyses existing versions of the local items and downloads latest updates of the user's data from the server.
 	DownloadUserData(context.Context, *DownloadUserDataRequest) (*UserData, error)

@@ -29,14 +29,14 @@ func (c *Client) RenewTokens() error {
 	return nil
 }
 
-// SignUp sends user's login and password to the server to register a new user.
+// SignUp sends user's email and password to the server to register a new user.
 // If the registration is successfull, the new user session is created and auth token pair is returned.
-func SignUp(ctx context.Context, pbClient pb.GophkeeperClient, username, password string) (models.AccessToken, models.RefreshToken, error) {
+func SignUp(ctx context.Context, pbClient pb.GophkeeperClient, email, password string) (models.AccessToken, models.RefreshToken, error) {
 	if err := validatePassword(password); err != nil {
 		return "", "", err
 	}
 	userAuth, err := pbClient.SignUp(ctx, &pb.SignInData{
-		UserName:     username,
+		Email:        email,
 		UserPassword: password,
 	})
 	if err == nil {
@@ -48,17 +48,17 @@ func SignUp(ctx context.Context, pbClient pb.GophkeeperClient, username, passwor
 	case codes.Internal:
 		errMsg = fmt.Sprintf("signUp: internal server error: %s", se.Message())
 	case codes.AlreadyExists:
-		errMsg = fmt.Sprintf("signUp: user with login %s already exists: %s", username, se.Message())
+		errMsg = fmt.Sprintf("signUp: user with email %s already exists: %s", email, se.Message())
 	}
 	log.Println(errMsg)
 
 	return "", "", errors.New(errMsg)
 }
 
-// LogIn sends user's login and password to the server to authenticate the user and to create the new user session.
-func LogIn(ctx context.Context, pbClient pb.GophkeeperClient, username, password string) (models.AccessToken, models.RefreshToken, error) {
+// LogIn sends user's email and password to the server to authenticate the user and to create the new user session.
+func LogIn(ctx context.Context, pbClient pb.GophkeeperClient, email, password string) (models.AccessToken, models.RefreshToken, error) {
 	userAuth, err := pbClient.LogIn(ctx, &pb.SignInData{
-		UserName:     username,
+		Email:        email,
 		UserPassword: password,
 	})
 	if err == nil {
@@ -70,9 +70,9 @@ func LogIn(ctx context.Context, pbClient pb.GophkeeperClient, username, password
 	case codes.Internal:
 		errMsg = fmt.Sprintf("logIn: internal server error: %s", se.Message())
 	case codes.NotFound:
-		errMsg = fmt.Sprintf("logIn: user with login %s is not found: %s", username, se.Message())
+		errMsg = fmt.Sprintf("logIn: user with email %s is not found: %s", email, se.Message())
 	case codes.Unauthenticated:
-		errMsg = fmt.Sprintf("logIn: could not authenticate the user with login %s: %s", username, se.Message())
+		errMsg = fmt.Sprintf("logIn: could not authenticate the user with email %s: %s", email, se.Message())
 	}
 	log.Println(errMsg)
 

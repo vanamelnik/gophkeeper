@@ -20,7 +20,7 @@ func main() {
 	// pbClient := pb.NewGophkeeperClient(conn)
 
 	// if no stored active session
-	//	 sign in / login
+	//	 sign in / email
 
 	// c, err := client.New(context.Background(),
 	// 	pbClient,

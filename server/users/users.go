@@ -43,8 +43,8 @@ func NewService(storage storage.Storage, secret string, accessTokenDuration, ref
 }
 
 // CreateUser stores user info in the database and returns user ID.
-func (s Service) CreateUser(ctx context.Context, userName, pwHash string) (uuid.UUID, error) {
-	user, err := s.storage.CreateUser(ctx, userName, pwHash)
+func (s Service) CreateUser(ctx context.Context, email, pwHash string) (uuid.UUID, error) {
+	user, err := s.storage.CreateUser(ctx, email, pwHash)
 	if err != nil {
 		return uuid.Nil, err
 	}
@@ -127,10 +127,10 @@ func (s Service) RefreshTheTokens(ctx context.Context, refreshToken models.Refre
 	return newAccessToken, newRefreshToken, nil
 }
 
-// Login checks whether the user with the username provided exists and
+// Login checks whether the user with the email provided exists and
 // the given credentials are valid. If all is OK a new session is created.
-func (s Service) Login(ctx context.Context, userName, password string) (models.AccessToken, models.RefreshToken, error) {
-	user, err := s.storage.GetUserByLogin(ctx, userName)
+func (s Service) Login(ctx context.Context, email, password string) (models.AccessToken, models.RefreshToken, error) {
+	user, err := s.storage.GetUserByEmail(ctx, email)
 	if err != nil {
 		return "", "", err
 	}

@@ -100,7 +100,7 @@ message RefreshToken {
 }
 
 message SignInData {
-    string user_name = 1;
+    string email = 1;
     string user_password = 2;
 }
 

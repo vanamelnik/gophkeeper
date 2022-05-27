@@ -14,10 +14,10 @@ import (
 // One User can have multiple sessions from different devices.
 type User struct {
 	ID           uuid.UUID
-	Login        string
+	Email        string
 	PasswordHash string
-	CreatedAt    time.Time
-	DeletedAt    time.Time
+	CreatedAt    *time.Time
+	DeletedAt    *time.Time
 }
 
 // Session represents a single client session of the user with given ID.

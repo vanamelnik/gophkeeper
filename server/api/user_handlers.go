@@ -21,7 +21,7 @@ func (s Server) SignUp(ctx context.Context, data *pb.SignInData) (*pb.UserAuth, 
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	userID, err := s.users.CreateUser(ctx, data.UserName, pwHash)
+	userID, err := s.users.CreateUser(ctx, data.Email, pwHash)
 	if err != nil {
 		if errors.Is(err, storage.ErrAlreadyExists) {
 			return nil, status.Error(codes.AlreadyExists, err.Error())
@@ -41,7 +41,7 @@ func (s Server) SignUp(ctx context.Context, data *pb.SignInData) (*pb.UserAuth, 
 
 // LogIn implements GophkeeperServer interface.
 func (s Server) LogIn(ctx context.Context, data *pb.SignInData) (*pb.UserAuth, error) {
-	accessToken, refreshToken, err := s.users.Login(ctx, data.UserName, data.UserPassword)
+	accessToken, refreshToken, err := s.users.Login(ctx, data.Email, data.UserPassword)
 	if err != nil {
 		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
 			return nil, status.Error(codes.Unauthenticated, err.Error())
