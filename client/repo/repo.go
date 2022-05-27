@@ -24,7 +24,7 @@ type (
 		// dataVersion is the version of current user data snapshot.
 		dataVersion uint64
 
-		// TODO: написать сюда, зачем нужен мьютекс)))
+		// mutex is needed to prevent reading when data is updated
 		sync.RWMutex
 		// Items contains user data wrapped in Item struct (with Pending flag).
 		entries []Entry
@@ -61,8 +61,8 @@ func (r *Repo) CreateItem(item models.Item) error {
 	if err := models.IsValidItem(item); err != nil {
 		return err
 	}
-	r.RLock()
-	defer r.RUnlock()
+	r.Lock()
+	defer r.Unlock()
 	if _, err := r.GetItemByID(item.ID); err == nil {
 		return ErrAlreadyExists
 	}
@@ -80,8 +80,8 @@ func (r *Repo) UpdateItem(item models.Item) error {
 	if err := models.IsValidItem(item); err != nil {
 		return err
 	}
-	r.RLock()
-	defer r.RUnlock()
+	r.Lock()
+	defer r.Unlock()
 	for i, storedItem := range r.entries {
 		if storedItem.Item.ID == item.ID && storedItem.Item.DeletedAt == nil { // Undelete is not possible by this method.
 			r.entries[i] = Entry{
@@ -99,8 +99,8 @@ func (r *Repo) UpdateItem(item models.Item) error {
 
 // DeleteItem marks the item in local repository as 'deleted' and 'pending'
 func (r *Repo) DeleteItem(itemID uuid.UUID) error {
-	r.RLock()
-	defer r.RUnlock()
+	r.Lock()
+	defer r.Unlock()
 	for i, storedItem := range r.entries {
 		if storedItem.Item.ID == itemID && storedItem.Item.DeletedAt == nil {
 			now := time.Now()
@@ -136,21 +136,24 @@ func (r *Repo) GetItemByID(itemID uuid.UUID) (Entry, error) {
 
 // GetDataSnapshot retrieves the snapshot of all user data in local repository.
 func (r *Repo) GetDataSnapshot() []Entry {
+	r.RLock()
+	defer r.RUnlock()
+
 	return r.entries
 }
 
 // GetDataVersion returns current DataVersion of local user data.
 func (r *Repo) GetDataVersion() uint64 {
-	r.Lock()
-	defer r.Unlock()
+	r.RLock()
+	defer r.RUnlock()
 	return r.dataVersion
 }
 
 // BuildVersionMap returns a map of te version of each item.
 func (r *Repo) BuildItemVersionMap() map[uuid.UUID]uint64 {
 	versions := make(map[uuid.UUID]uint64)
-	r.Lock()
-	defer r.Unlock()
+	r.RLock()
+	defer r.RUnlock()
 	for _, e := range r.entries {
 		versions[e.Item.ID] = e.Item.Version
 	}
@@ -159,6 +162,8 @@ func (r *Repo) BuildItemVersionMap() map[uuid.UUID]uint64 {
 
 // StoreDataVersion changes dataVersion field in Repo object.
 func (r *Repo) StoreDataVersion(dataVersion uint64) {
+	r.Lock()
+	defer r.Unlock()
 	r.dataVersion = dataVersion
 	r.isChanged = true
 }
@@ -171,6 +176,9 @@ func (r *Repo) StoreAccessToken(token models.AccessToken) {
 }
 
 func (r *Repo) GetAccessToken() models.AccessToken {
+	r.RLock()
+	defer r.RUnlock()
+
 	return r.accessToken
 }
 
@@ -182,5 +190,8 @@ func (r *Repo) StoreRefreshToken(token models.RefreshToken) {
 }
 
 func (r *Repo) GetRefreshToken() models.RefreshToken {
+	r.RLock()
+	defer r.RUnlock()
+
 	return r.refreshToken
 }

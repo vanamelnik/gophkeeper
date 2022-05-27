@@ -12,6 +12,8 @@ func (err ErrMergeConflict) Error() string {
 
 // MergeItems performs merging the items received from the server in accordance with the rules (see README.md).
 func (r *Repo) MergeItem(receivedItem models.Item) error {
+	r.Lock()
+	defer r.Unlock()
 	for i, entry := range r.entries {
 		if entry.Item.ID == receivedItem.ID {
 			// merge condition boolean variables
@@ -46,6 +48,8 @@ func (r *Repo) MergeItem(receivedItem models.Item) error {
 // 'Pending' flag is unset.
 // Contract: repo must be locked.
 func (r *Repo) ForceMergeItem(item models.Item) {
+	r.Lock()
+	defer r.Unlock()
 	for i, entry := range r.entries {
 		if entry.Item.ID == item.ID {
 			r.entries[i].Item = item

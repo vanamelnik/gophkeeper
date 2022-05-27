@@ -8,8 +8,6 @@ import (
 )
 
 func (c *Client) MergeItems(dataVersion uint64, items []models.Item) {
-	c.repo.Lock()
-	defer c.repo.Unlock()
 	for _, item := range items {
 		err := c.repo.MergeItem(item)
 		if err != nil {
