@@ -66,10 +66,6 @@ func (s Service) PublishUserData(ctx context.Context, userID uuid.UUID, events [
 			if err := tx.UpdateItem(ctx, event.Item); err != nil {
 				return err
 			}
-		case models.OpDelete:
-			if err := tx.DeleteItem(ctx, event.Item); err != nil {
-				return err
-			}
 		}
 	}
 

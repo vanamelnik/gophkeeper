@@ -19,6 +19,7 @@ func (s Storage) GetUserData(ctx context.Context, userID uuid.UUID) (*models.Use
 	if err != nil {
 		return nil, err
 	}
+	// nolint: errcheck
 	defer tx.Rollback()
 
 	userData := models.UserData{}

@@ -61,14 +61,6 @@ type (
 
 		// UpdateItem updates the record in the database.
 		UpdateItem(ctx context.Context, item models.Item) error
-		// UpdateBlob updates the blob record in the database.
-
-		// DeleteItem deletes the record in the database.
-		DeleteItem(ctx context.Context, item models.Item) error
-
-		// UpdateDataVersion increments current DataVersion field of the user provided.
-		// Returns renewed DataVersion.
-		UpdateDataVersion(ctx context.Context, userID uuid.UUID) (uint64, error)
 
 		// RollBack cancels the transaction if it's not closed yet.
 		RollBack() error

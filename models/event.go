@@ -12,11 +12,8 @@ type Operation string
 const (
 	OpCreate Operation = "CREATE"
 	OpUpdate Operation = "UPDATE"
-	OpDelete Operation = "DELETE"
 )
 
 func (o Operation) Valid() bool {
-	return o == OpCreate ||
-		o == OpUpdate ||
-		o == OpDelete
+	return o == OpCreate || o == OpUpdate
 }

@@ -1,19 +1,30 @@
 package postgres
 
 import (
+	"context"
 	"database/sql"
 	_ "embed"
 
+	"github.com/google/uuid"
 	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/vanamelnik/gophkeeper/server/storage"
 )
 
 var _ storage.Storage = (*Storage)(nil)
+var _ storage.UserTransaction = (*UserTransaction)(nil)
 
-// Storage implements storage.Storage interface for Postgresql database engine.
-type Storage struct {
-	db *sql.DB
-}
+type (
+	// Storage implements storage.Storage interface for Postgresql database engine.
+	Storage struct {
+		db *sql.DB
+	}
+
+	// UserTransaction implements storage.UserTransaction interface.
+	UserTransaction struct {
+		*sql.Tx
+		userID uuid.UUID
+	}
+)
 
 //go:embed schema.sql
 var queryCreate string
@@ -37,4 +48,20 @@ func NewStorage(connStr string) (Storage, error) {
 
 func (s Storage) Close() error {
 	return s.db.Close()
+}
+
+// NewUserTransaction implements storage.Storage interface.
+func (s Storage) NewUserTransaction(ctx context.Context, userID uuid.UUID) (storage.UserTransaction, error) {
+	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{
+		Isolation: sql.LevelSerializable,
+		ReadOnly:  false,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &UserTransaction{
+		Tx:     tx,
+		userID: userID,
+	}, nil
 }

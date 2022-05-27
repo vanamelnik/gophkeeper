@@ -108,7 +108,6 @@ message Event {
     enum Operation {
         CREATE = 0;
         UPDATE = 1;
-        DELETE = 2;
     }
     Operation operation = 1;
     Item item = 2;
