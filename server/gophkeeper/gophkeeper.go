@@ -9,22 +9,41 @@ import (
 	"github.com/vanamelnik/gophkeeper/server/storage"
 )
 
-// Service represents the main service that implements the business logic of the server.
-type Service struct {
-	storage storage.Storage
-	// dl DataLoader
-}
+type (
+	// Service represents the main service that implements the business logic of the server.
+	Service struct {
+		storage storage.Storage
+
+		eventCh chan eventsPack
+		stopCh  chan struct{}
+	}
+
+	// eventsPack is the pack of events received from the client.
+	eventsPack struct {
+		ctx    context.Context
+		userID uuid.UUID
+		events []models.Event
+	}
+)
+
+const (
+	// eventChSize is the size of the event channel's buffer.
+	eventChSize = 10
+)
 
 var (
 	ErrVersionUpToDate = errors.New("data version is up to date")
 )
 
 func NewGophkeeper(db storage.Storage) Service {
-	// dl := NewDataLoader()
-	return Service{
+	s := Service{
 		storage: db,
-		// dl: dl,
+		eventCh: make(chan eventsPack, eventChSize),
+		stopCh:  make(chan struct{}),
 	}
+
+	go s.processor()
+	return s
 }
 
 // GetUserData returns the new items and the newer versions of existing local items from the database according to the version map provided.
@@ -49,25 +68,17 @@ func (s Service) GetUserData(ctx context.Context, userID uuid.UUID, versionMap m
 }
 
 // PublishUserData applies local changes of user data to the database.
-func (s Service) PublishUserData(ctx context.Context, userID uuid.UUID, events []models.Event) error {
-	tx, err := s.storage.NewUserTransaction(ctx, userID)
-	if err != nil {
-		return err
+func (s Service) PublishUserData(ctx context.Context, userID uuid.UUID, events []models.Event) {
+	s.eventCh <- eventsPack{
+		ctx:    ctx,
+		userID: userID,
+		events: events,
 	}
-	defer tx.RollBack()
+}
 
-	for _, event := range events {
-		switch event.Operation {
-		case models.OpCreate:
-			if err := tx.CreateItem(ctx, event.Item); err != nil {
-				return err
-			}
-		case models.OpUpdate:
-			if err := tx.UpdateItem(ctx, event.Item); err != nil {
-				return err
-			}
-		}
+func (s Service) Close() {
+	if s.stopCh != nil {
+		close(s.stopCh)
+		s.stopCh = nil
 	}
-
-	return nil
 }

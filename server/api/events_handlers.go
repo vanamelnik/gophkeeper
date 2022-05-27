@@ -84,9 +84,7 @@ func (s Server) PublishLocalChanges(ctx context.Context, r *pb.PublishLocalChang
 	}
 
 	// process local events
-	if err := s.gophkeeper.PublishUserData(ctx, userID, events); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
+	s.gophkeeper.PublishUserData(ctx, userID, events)
 
 	return &emptypb.Empty{}, nil
 }

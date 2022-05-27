@@ -93,6 +93,7 @@ func New(
 		return nil, ErrReloginNeeded
 	}
 	go c.worker()
+	log.Println("client started")
 	return &c, nil
 }
 
@@ -261,10 +262,11 @@ func (c *Client) worker() {
 	timeToSend := time.NewTicker(c.sendInterval)
 	defer timeToSend.Stop()
 
+clientLoop:
 	for {
 		select {
 		case <-c.closeCh:
-			break
+			break clientLoop
 		case <-whatsNew.C:
 			if err := c.WhatsNew(); err != nil {
 				log.Println("client: user relogin needed, session stopped")
@@ -282,4 +284,9 @@ func (c *Client) worker() {
 			c.eventsPool = c.eventsPool[:0] // if all events are successfully sent, clear the events pool
 		}
 	}
+	if c.eventCh != nil {
+		close(c.eventCh)
+		c.eventCh = nil
+	}
+	log.Println("client is stopped")
 }
