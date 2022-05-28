@@ -3,6 +3,7 @@ package gophkeeper
 import (
 	"context"
 	"errors"
+	"sync"
 
 	"github.com/google/uuid"
 	"github.com/vanamelnik/gophkeeper/models"
@@ -14,6 +15,7 @@ type (
 	Service struct {
 		storage storage.Storage
 
+		wg      *sync.WaitGroup
 		eventCh chan eventsPack
 		stopCh  chan struct{}
 	}
@@ -26,19 +28,14 @@ type (
 	}
 )
 
-const (
-	// eventChSize is the size of the event channel's buffer.
-	eventChSize = 10
-)
-
 var (
 	ErrVersionUpToDate = errors.New("data version is up to date")
 )
 
-func NewGophkeeper(db storage.Storage) Service {
+func NewGophkeeper(db storage.Storage, maxDBConnections int) Service {
 	s := Service{
 		storage: db,
-		eventCh: make(chan eventsPack, eventChSize),
+		eventCh: make(chan eventsPack, maxDBConnections),
 		stopCh:  make(chan struct{}),
 	}
 
@@ -68,7 +65,11 @@ func (s Service) GetUserData(ctx context.Context, userID uuid.UUID, versionMap m
 }
 
 // PublishUserData applies local changes of user data to the database.
-func (s Service) PublishUserData(ctx context.Context, userID uuid.UUID, events []models.Event) {
+func (s Service) PublishUserData(ctx context.Context, userID uuid.UUID, events []models.Event) error {
+	if s.eventCh == nil {
+		return Err
+	}
+	s.wg.Add(1)
 	s.eventCh <- eventsPack{
 		ctx:    ctx,
 		userID: userID,
@@ -77,6 +78,7 @@ func (s Service) PublishUserData(ctx context.Context, userID uuid.UUID, events [
 }
 
 func (s Service) Close() {
+	s.wg.Wait()
 	if s.stopCh != nil {
 		close(s.stopCh)
 		s.stopCh = nil

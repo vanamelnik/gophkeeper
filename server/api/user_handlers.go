@@ -81,6 +81,7 @@ func (s Server) GetNewTokens(ctx context.Context, rt *pb.RefreshToken) (*pb.User
 		// logout if refresh token is expired
 		if errors.Is(err, users.ErrRefreshTokenExpired) {
 			sessionID, _ := s.users.GetSessionID(models.RefreshToken(rt.RefreshToken))
+			// nolint: errcheck
 			s.users.Logout(ctx, sessionID)
 		}
 		return nil, status.Error(codes.Unauthenticated, err.Error())

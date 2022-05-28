@@ -14,26 +14,26 @@ processorLoop:
 	for {
 		select {
 		case <-s.stopCh:
-			s.Close()
 			break processorLoop
 		case p := <-s.eventCh:
-			if err := s.processUserData(p.ctx, p.userID, p.events); err != nil {
-				log.Printf("gophkeeper processor: %s", err)
-			}
+			go func(p eventsPack) {
+				if err := s.processUserData(p.ctx, p.userID, p.events); err != nil {
+					log.Printf("gophkeeper processor: %s", err)
+				}
+			}(p)
 		}
-	}
-	if s.eventCh != nil {
-		close(s.eventCh)
-		s.eventCh = nil
 	}
 	log.Println("GophKeeper processor is stopped")
 }
 
 func (s Service) processUserData(ctx context.Context, userID uuid.UUID, events []models.Event) error {
+	defer s.wg.Done()
+
 	tx, err := s.storage.NewUserTransaction(ctx, userID)
 	if err != nil {
 		return err
 	}
+	// nolint: errcheck
 	defer tx.RollBack()
 
 	for _, event := range events {
@@ -49,5 +49,5 @@ func (s Service) processUserData(ctx context.Context, userID uuid.UUID, events [
 		}
 	}
 
-	return nil
+	return tx.Commit()
 }
