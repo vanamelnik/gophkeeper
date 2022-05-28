@@ -1,9 +1,17 @@
+#
 # GophKeeper server configuration file
+#
+# You may use environment variables instead of config file:
+# SERVER_PORT - GRPC server port (ex. ':8080')
+# DATABASE_DSN - connection string for postgres engine
+# TOKENS_SECRETKEY - secret key for access and refresh tokens hashing
+# TOKENS_ACCESSTOKENDURATION - access token expiration time
+# TOKENS_REFRESHTOKENDURATION - refresh token expiration time
 
 # Tokens configuration
 tokens:
   secretKey: "secret key for access tokens hashing"
-  accessTokenDuration: "1s"
+  accessTokenDuration: "10m"
   refreshTokenDuration: "24h"
 
 # Database configuration

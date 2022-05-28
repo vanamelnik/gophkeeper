@@ -5,6 +5,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/spf13/viper"
@@ -49,6 +50,8 @@ func main() {
 }
 
 func loadConfig() error {
+	viper.AutomaticEnv()
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.SetConfigFile(cfgFileName)
 	err := viper.ReadInConfig()
 	if err != nil {

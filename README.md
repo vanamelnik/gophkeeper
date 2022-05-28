@@ -4,6 +4,22 @@ GophKeeper is a client-server system that allows users securely store logins, pa
 
 Interaction with the server occurs via the gRPC protocol, methods are described in ./proto/gophkeeper.proto
 
+## Usage
+
+### Server
+
+Server reads config from the file "server_config.yaml" in work directory.
+
+You may use environment variables instead of config file:
+
+- **SERVER_PORT** - GRPC server port (ex. ':8080')
+- **DATABASE_DSN** - connection string for postgres engine
+- **TOKENS_SECRETKEY** - secret key for access and refresh tokens hashing
+- **TOKENS_ACCESSTOKENDURATION** - access token expiration time
+- **TOKENS_REFRESHTOKENDURATION** - refresh token expiration time
+
+## Description of Client-Server Interaction
+
 ### Definitions
 
 **User** - service user. Can connect to the server from different clients.
@@ -37,7 +53,7 @@ This field is stored in the user table in the database and represents the versio
 
 ## User registration and authentication
 
-...
+// TODO: ...
 
 ## Data Synchronization Protocol
 
