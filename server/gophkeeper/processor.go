@@ -14,7 +14,7 @@ processorLoop:
 	for {
 		select {
 		case <-s.stopCh:
-			break processorLoop
+			break processorLoop // TODO: implement graceful shutdown
 		case p := <-s.eventCh:
 			go func(p eventsPack) {
 				if err := s.processUserData(p.ctx, p.userID, p.events); err != nil {
@@ -26,6 +26,7 @@ processorLoop:
 	log.Println("GophKeeper processor is stopped")
 }
 
+// processUserData creates a new user transaction and sends user's events into the storage.
 func (s Service) processUserData(ctx context.Context, userID uuid.UUID, events []models.Event) error {
 	defer s.wg.Done()
 

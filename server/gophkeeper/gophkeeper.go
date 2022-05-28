@@ -15,9 +15,9 @@ type (
 	Service struct {
 		storage storage.Storage
 
-		wg      *sync.WaitGroup
 		eventCh chan eventsPack
 		stopCh  chan struct{}
+		wg      *sync.WaitGroup
 	}
 
 	// eventsPack is the pack of events received from the client.
@@ -32,14 +32,15 @@ var (
 	ErrVersionUpToDate = errors.New("data version is up to date")
 )
 
-func NewGophkeeper(db storage.Storage, maxDBConnections int) Service {
+func NewGophkeeper(db storage.Storage) Service {
 	s := Service{
 		storage: db,
-		eventCh: make(chan eventsPack, maxDBConnections),
+		wg:      &sync.WaitGroup{},
+		eventCh: make(chan eventsPack, 1),
 		stopCh:  make(chan struct{}),
 	}
 
-	go s.processor()
+	go s.processor() // TODO: implement a worker pool to limit DB connections
 	return s
 }
 
@@ -65,10 +66,7 @@ func (s Service) GetUserData(ctx context.Context, userID uuid.UUID, versionMap m
 }
 
 // PublishUserData applies local changes of user data to the database.
-func (s Service) PublishUserData(ctx context.Context, userID uuid.UUID, events []models.Event) error {
-	if s.eventCh == nil {
-		return Err
-	}
+func (s Service) PublishUserData(ctx context.Context, userID uuid.UUID, events []models.Event) {
 	s.wg.Add(1)
 	s.eventCh <- eventsPack{
 		ctx:    ctx,
