@@ -1,4 +1,4 @@
-package server
+package api
 
 import (
 	"context"
@@ -17,7 +17,7 @@ import (
 )
 
 // DownloadUserData implements GophkeeperServer interface.
-func (s Server) DownloadUserData(ctx context.Context, r *pb.DownloadUserDataRequest) (*pb.UserData, error) {
+func (s server) DownloadUserData(ctx context.Context, r *pb.DownloadUserDataRequest) (*pb.UserData, error) {
 	userID, err := s.users.Authenticate(ctx, models.AccessToken(r.Token.AccessToken))
 	if err != nil {
 		return nil, status.Error(codes.Unauthenticated, err.Error())
@@ -49,7 +49,7 @@ func (s Server) DownloadUserData(ctx context.Context, r *pb.DownloadUserDataRequ
 }
 
 // PublishLocalChanges implements GophkeeperServer interface.
-func (s Server) PublishLocalChanges(ctx context.Context, r *pb.PublishLocalChangesRequest) (*emptypb.Empty, error) {
+func (s server) PublishLocalChanges(ctx context.Context, r *pb.PublishLocalChangesRequest) (*emptypb.Empty, error) {
 	userID, err := s.users.Authenticate(ctx, models.AccessToken(r.Token.AccessToken))
 	if err != nil {
 		return nil, status.Error(codes.Unauthenticated, err.Error())
@@ -90,7 +90,7 @@ func (s Server) PublishLocalChanges(ctx context.Context, r *pb.PublishLocalChang
 }
 
 // WhatsNew implements GophkeeperServer interface.
-func (s Server) WhatsNew(ctx context.Context, r *pb.WhatsNewRequest) (*emptypb.Empty, error) {
+func (s server) WhatsNew(ctx context.Context, r *pb.WhatsNewRequest) (*emptypb.Empty, error) {
 	userID, err := s.users.Authenticate(ctx, models.AccessToken(r.Token.AccessToken))
 	if err != nil {
 		return nil, status.Error(codes.Unauthenticated, err.Error())

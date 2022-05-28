@@ -1,4 +1,4 @@
-package server
+package api
 
 import (
 	"context"
@@ -16,7 +16,7 @@ import (
 )
 
 // SignUp implements GophkeeperServer interface.
-func (s Server) SignUp(ctx context.Context, data *pb.SignInData) (*pb.UserAuth, error) {
+func (s server) SignUp(ctx context.Context, data *pb.SignInData) (*pb.UserAuth, error) {
 	pwHash, err := bcrypt.BcryptPassword(data.UserPassword)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -40,7 +40,7 @@ func (s Server) SignUp(ctx context.Context, data *pb.SignInData) (*pb.UserAuth, 
 }
 
 // LogIn implements GophkeeperServer interface.
-func (s Server) LogIn(ctx context.Context, data *pb.SignInData) (*pb.UserAuth, error) {
+func (s server) LogIn(ctx context.Context, data *pb.SignInData) (*pb.UserAuth, error) {
 	accessToken, refreshToken, err := s.users.Login(ctx, data.Email, data.UserPassword)
 	if err != nil {
 		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
@@ -59,7 +59,7 @@ func (s Server) LogIn(ctx context.Context, data *pb.SignInData) (*pb.UserAuth, e
 }
 
 // LogOut implements GophkeeperServer interface.
-func (s Server) LogOut(ctx context.Context, rt *pb.RefreshToken) (*empty.Empty, error) {
+func (s server) LogOut(ctx context.Context, rt *pb.RefreshToken) (*empty.Empty, error) {
 	sessionID, err := s.users.GetSessionID(models.RefreshToken(rt.RefreshToken))
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -75,7 +75,7 @@ func (s Server) LogOut(ctx context.Context, rt *pb.RefreshToken) (*empty.Empty, 
 }
 
 // GetNewTokens implements GophkeeperServer interface.
-func (s Server) GetNewTokens(ctx context.Context, rt *pb.RefreshToken) (*pb.UserAuth, error) {
+func (s server) GetNewTokens(ctx context.Context, rt *pb.RefreshToken) (*pb.UserAuth, error) {
 	accessToken, refreshToken, err := s.users.RefreshTheTokens(ctx, models.RefreshToken(rt.RefreshToken))
 	if err != nil {
 		// logout if refresh token is expired
