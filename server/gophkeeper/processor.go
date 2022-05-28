@@ -19,7 +19,9 @@ processorLoop:
 			go func(p eventsPack) {
 				if err := s.processUserData(p.ctx, p.userID, p.events); err != nil {
 					log.Printf("gophkeeper processor: %s", err)
+					return
 				}
+				log.Printf("gophkeeper processor: successfully processed %d event(s) of user %v", len(p.events), p.userID)
 			}(p)
 		}
 	}

@@ -24,7 +24,7 @@ func (s Storage) GetUserData(ctx context.Context, userID uuid.UUID) (*models.Use
 
 	userData := models.UserData{}
 	// get DataVersion
-	if err := tx.QueryRowContext(ctx, `SELECT data_version FROM users WHERE id=$1 AND deleted_at NOT NULL;`,
+	if err := tx.QueryRowContext(ctx, `SELECT data_version FROM users WHERE id=$1 AND deleted_at IS NULL;`,
 		userID).Scan(&userData.Version); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, storage.ErrNotFound
@@ -64,7 +64,7 @@ func (s Storage) getTexts(ctx context.Context, tx *sql.Tx, userID uuid.UUID) ([]
 	items := make([]models.Item, 0)
 	rows, err := tx.QueryContext(
 		ctx,
-		`SELECT id, text_string, meta, created_at, deleted_at FROM texts WHERE user_id=$1;`,
+		`SELECT id, text_string, meta, created_at, deleted_at, version FROM texts WHERE user_id=$1;`,
 		userID,
 	)
 	if err != nil {
@@ -74,7 +74,7 @@ func (s Storage) getTexts(ctx context.Context, tx *sql.Tx, userID uuid.UUID) ([]
 	for rows.Next() {
 		data := models.TextData{}
 		item := models.Item{}
-		if err := rows.Scan(&item.ID, &data.Text, &item.Meta, &item.CreatedAt, &item.DeletedAt); err != nil {
+		if err := rows.Scan(&item.ID, &data.Text, &item.Meta, &item.CreatedAt, &item.DeletedAt, &item.Version); err != nil {
 			return nil, err
 		}
 		item.Payload = data
@@ -88,7 +88,7 @@ func (s Storage) getPasswords(ctx context.Context, tx *sql.Tx, userID uuid.UUID)
 	items := make([]models.Item, 0)
 	rows, err := tx.QueryContext(
 		ctx,
-		`SELECT id, password, meta, created_at, deleted_at FROM passwords WHERE user_id=$1;`,
+		`SELECT id, password, meta, created_at, deleted_at, version FROM passwords WHERE user_id=$1;`,
 		userID,
 	)
 	if err != nil {
@@ -98,7 +98,7 @@ func (s Storage) getPasswords(ctx context.Context, tx *sql.Tx, userID uuid.UUID)
 	for rows.Next() {
 		data := models.PasswordData{}
 		item := models.Item{}
-		if err := rows.Scan(&item.ID, &data.Password, &item.Meta, &item.CreatedAt, &item.DeletedAt); err != nil {
+		if err := rows.Scan(&item.ID, &data.Password, &item.Meta, &item.CreatedAt, &item.DeletedAt, &item.Version); err != nil {
 			return nil, err
 		}
 		item.Payload = data
@@ -112,7 +112,7 @@ func (s Storage) getCards(ctx context.Context, tx *sql.Tx, userID uuid.UUID) ([]
 	items := make([]models.Item, 0)
 	rows, err := tx.QueryContext(
 		ctx,
-		`SELECT id, card_number, cardholder_name, expiration_date, cvc, meta, created_at, deleted_at
+		`SELECT id, card_number, cardholder_name, expiration_date, cvc, meta, created_at, deleted_at, version
 		FROM cards WHERE user_id=$1;`,
 		userID,
 	)
@@ -124,7 +124,7 @@ func (s Storage) getCards(ctx context.Context, tx *sql.Tx, userID uuid.UUID) ([]
 		data := models.CardData{}
 		item := models.Item{}
 		if err := rows.Scan(&item.ID, &data.Number, &data.CardholderName, &data.Date, &data.CVC,
-			&item.Meta, &item.CreatedAt, &item.DeletedAt); err != nil {
+			&item.Meta, &item.CreatedAt, &item.DeletedAt, &item.Version); err != nil {
 			return nil, err
 		}
 		item.Payload = data
@@ -138,7 +138,7 @@ func (s Storage) getBlobs(ctx context.Context, tx *sql.Tx, userID uuid.UUID) ([]
 	items := make([]models.Item, 0)
 	rows, err := tx.QueryContext(
 		ctx,
-		`SELECT id, blob, meta, created_at, deleted_at FROM blobs WHERE user_id=$1;`,
+		`SELECT id, blob, meta, created_at, deleted_at, version FROM blobs WHERE user_id=$1;`,
 		userID,
 	)
 	if err != nil {
@@ -148,7 +148,7 @@ func (s Storage) getBlobs(ctx context.Context, tx *sql.Tx, userID uuid.UUID) ([]
 	for rows.Next() {
 		data := models.BinaryData{}
 		item := models.Item{}
-		if err := rows.Scan(&item.ID, &data.Binary, &item.Meta, &item.CreatedAt, &item.DeletedAt); err != nil {
+		if err := rows.Scan(&item.ID, &data.Binary, &item.Meta, &item.CreatedAt, &item.DeletedAt, &item.Version); err != nil {
 			return nil, err
 		}
 		item.Payload = data

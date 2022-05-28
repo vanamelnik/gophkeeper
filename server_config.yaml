@@ -1,0 +1,15 @@
+# GophKeeper server configuration file
+
+# Tokens configuration
+tokens:
+  secretKey: "secret key for access tokens hashing"
+  accessTokenDuration: "1s"
+  refreshTokenDuration: "24h"
+
+# Database configuration
+databaseDSN: "postgres://postgres:qwe123@localhost:5432/gophkeeper_dev?sslmode=disable"
+
+# Server configuration
+server:
+  host: "localhost"
+  port: "3000"

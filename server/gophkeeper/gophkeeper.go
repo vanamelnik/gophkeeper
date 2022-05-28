@@ -32,7 +32,7 @@ var (
 	ErrVersionUpToDate = errors.New("data version is up to date")
 )
 
-func NewGophkeeper(db storage.Storage) Service {
+func NewService(db storage.Storage) Service {
 	s := Service{
 		storage: db,
 		wg:      &sync.WaitGroup{},

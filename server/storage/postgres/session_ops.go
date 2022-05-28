@@ -15,13 +15,12 @@ func (s Storage) CreateSession(ctx context.Context, session models.Session) erro
 	_, err := s.db.ExecContext(
 		ctx,
 		`INSERT INTO sessions
-		(id, user_id, refresh_token, login_at, logout_at)
-		VALUES ($1, $2, $3, $4, $5);`,
+		(id, user_id, refresh_token, login_at)
+		VALUES ($1, $2, $3, $4);`,
 		session.ID,
 		session.UserID,
 		session.RefreshToken,
 		session.LoginAt,
-		session.LogoutAt,
 	)
 	if err != nil {
 		return err
@@ -35,7 +34,7 @@ func (s Storage) UpdateSession(ctx context.Context, session models.Session) erro
 		ctx,
 		`UPDATE sessions
 		SET refresh_token=$1, logout_at=$2
-		WHERE id=$3 AND deleted_at NOT NULL;`,
+		WHERE id=$3 AND logout_at IS NULL;`,
 		session.RefreshToken,
 		session.LogoutAt,
 		session.ID,
@@ -55,9 +54,9 @@ func (s Storage) GetSessionByID(ctx context.Context, sessionID uuid.UUID) (model
 	session := models.Session{ID: sessionID}
 	err := s.db.QueryRowContext(
 		ctx,
-		`SELECT (user_id, refresh_token, login_at, logout_at)
+		`SELECT user_id, refresh_token, login_at, logout_at
 		FROM sessions
-		WHERE id=$1 AND logout_at NOT NULL`,
+		WHERE id=$1 AND logout_at IS NULL`,
 		sessionID,
 	).Scan(&session.UserID, &session.RefreshToken, &session.LoginAt, &session.LogoutAt)
 	if err != nil {
@@ -78,7 +77,7 @@ func (s Storage) GetActiveUserSessions(ctx context.Context, userID uuid.UUID) ([
 		ctx,
 		`SELECT (id, refresh_token, login_at, logout_at)
 		FROM sessions
-		WHERE user_id = $1 AND logout_at NOT NULL`,
+		WHERE user_id = $1 AND logout_at IS NULL`,
 		userID,
 	)
 	if err != nil {

@@ -46,7 +46,7 @@ func NewService(storage storage.Storage, secret string, accessTokenDuration, ref
 func (s Service) CreateUser(ctx context.Context, email, pwHash string) (uuid.UUID, error) {
 	user, err := s.storage.CreateUser(ctx, email, pwHash)
 	if err != nil {
-		return uuid.Nil, err
+		return uuid.Nil, fmt.Errorf("createUser: %w", err)
 	}
 	return user.ID, nil
 }
@@ -55,25 +55,25 @@ func (s Service) CreateUser(ctx context.Context, email, pwHash string) (uuid.UUI
 func (s Service) CreateSession(ctx context.Context, userID uuid.UUID) (models.AccessToken, models.RefreshToken, error) {
 	sessionID, err := uuid.NewRandom()
 	if err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf("createSession: %w", err)
 	}
-	t, err := s.newRefreshToken(sessionID) // generate the first refreshToken
+	refreshToken, err := s.newRefreshToken(sessionID) // generate the first refreshToken
 	if err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf("createSession: %w", err)
 	}
 	now := time.Now()
 	if err = s.storage.CreateSession(ctx, models.Session{
 		ID:           sessionID,
 		UserID:       userID,
-		RefreshToken: t,
+		RefreshToken: refreshToken,
 		LoginAt:      &now,
 		LogoutAt:     nil,
 	}); err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf("createSession: %w", err)
 	}
-	accessToken, refreshToken, err := s.RefreshTheTokens(ctx, t)
+	accessToken, err := s.newAccessToken(userID)
 	if err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf("createSession: %w", err)
 	}
 
 	return accessToken, refreshToken, nil
@@ -82,7 +82,7 @@ func (s Service) CreateSession(ctx context.Context, userID uuid.UUID) (models.Ac
 // RefreshTheTokens checks whether the given refresh token is not expired. If the token is valid,
 // a new pair of tokens is generated and the new refresh token is stored in the db.
 func (s Service) RefreshTheTokens(ctx context.Context, refreshToken models.RefreshToken) (models.AccessToken, models.RefreshToken, error) {
-	t, err := jwt.Parse(string(refreshToken), func(t *jwt.Token) (interface{}, error) {
+	t, err := jwt.ParseWithClaims(string(refreshToken), &jwt.StandardClaims{}, func(t *jwt.Token) (interface{}, error) {
 		return []byte(s.secret), nil
 	})
 	if err != nil {

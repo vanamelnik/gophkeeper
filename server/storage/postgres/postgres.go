@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	_ "embed"
+	"fmt"
 
 	"github.com/google/uuid"
 	_ "github.com/jackc/pgx/v4/stdlib"
@@ -24,26 +25,36 @@ type (
 		tx     *sql.Tx
 		userID uuid.UUID
 	}
+
+	PostgresOption func(s Storage) error
 )
 
 //go:embed schema.sql
 var queryCreate string
 
 // NewStorage creates a new Postgres storage and creates db schema if not exists.
-func NewStorage(connStr string) (Storage, error) {
+func NewStorage(connStr string, opts ...PostgresOption) (Storage, error) {
 	db, err := sql.Open("pgx", connStr)
 	if err != nil {
-		return Storage{}, err
+		return Storage{}, fmt.Errorf("newStorage: %w", err)
 	}
 	if err := db.Ping(); err != nil {
-		return Storage{}, err
-	}
-	// create database schema if not exists
-	if _, err := db.Exec(queryCreate); err != nil {
-		return Storage{}, err
+		return Storage{}, fmt.Errorf("newStorage: %w", err)
 	}
 
-	return Storage{db: db}, nil
+	s := Storage{db}
+	for _, optFn := range opts {
+		if err := optFn(s); err != nil {
+			return Storage{}, fmt.Errorf("newStorage: %w", err)
+		}
+	}
+
+	// create database schema if not exists
+	if _, err := db.Exec(queryCreate); err != nil {
+		return Storage{}, fmt.Errorf("newStorage: %w", err)
+	}
+
+	return s, nil
 }
 
 func (s Storage) Close() error {
@@ -64,4 +75,13 @@ func (s Storage) NewUserTransaction(ctx context.Context, userID uuid.UUID) (stor
 		tx:     tx,
 		userID: userID,
 	}, nil
+}
+
+// WithDestructiveReset erases all tables in the DB!
+func WithDesctructiveReset() PostgresOption {
+	return func(s Storage) error {
+		_, err := s.db.Exec(`DROP SCHEMA public CASCADE;
+		CREATE SCHEMA public;`)
+		return err
+	}
 }

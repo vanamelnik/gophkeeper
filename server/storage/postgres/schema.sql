@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS sessions (
 );
 
 CREATE TABLE IF NOT EXISTS passwords (
-    id uuid UINQUE NOT NULL,
+    id uuid UNIQUE NOT NULL,
     user_id uuid NOT NULL,
     password TEXT NOT NULL,
     version integer NOT NULL DEFAULT 0,
@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS passwords (
     CONSTRAINT fk_user_id FOREIGN KEY (user_id) REFERENCES users (id)
 );
 CREATE TABLE IF NOT EXISTS blobs (
-    id uuid UINQUE NOT NULL,
+    id uuid UNIQUE NOT NULL,
     user_id uuid NOT NULL,
     blob BYTEA,
     version integer NOT NULL DEFAULT 0,
@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS blobs (
     CONSTRAINT fk_user_id FOREIGN KEY (user_id) REFERENCES users (id)
 );
 CREATE TABLE IF NOT EXISTS texts (
-    id uuid UINQUE NOT NULL,
+    id uuid UNIQUE NOT NULL,
     user_id uuid NOT NULL,
     text_string text,
     version integer NOT NULL DEFAULT 0,
@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS texts (
     CONSTRAINT fk_user_id FOREIGN KEY (user_id) REFERENCES users (id)
 );
 CREATE TABLE IF NOT EXISTS cards (
-    id uuid UINQUE NOT NULL,
+    id uuid UNIQUE NOT NULL,
     user_id uuid NOT NULL,
     card_number text,
     cardholder_name text,

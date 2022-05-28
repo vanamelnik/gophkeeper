@@ -10,7 +10,7 @@ import (
 )
 
 func (s Service) GetSessionID(rt models.RefreshToken) (uuid.UUID, error) {
-	t, _ := jwt.Parse(string(rt), func(t *jwt.Token) (interface{}, error) {
+	t, _ := jwt.ParseWithClaims(string(rt), &jwt.StandardClaims{}, func(t *jwt.Token) (interface{}, error) {
 		return []byte(s.secret), nil
 	})
 	claims, ok := t.Claims.(*jwt.StandardClaims)
@@ -19,7 +19,7 @@ func (s Service) GetSessionID(rt models.RefreshToken) (uuid.UUID, error) {
 	}
 	id, err := uuid.Parse(claims.Id)
 	if err != nil {
-		return uuid.Nil, err
+		return uuid.Nil, fmt.Errorf("users: getSessionID: %w", err)
 	}
 	return id, nil
 }

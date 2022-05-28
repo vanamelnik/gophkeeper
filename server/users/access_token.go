@@ -32,7 +32,7 @@ func (s Service) newAccessToken(userID uuid.UUID) (models.AccessToken, error) {
 
 // Authenticate checks if the given access token is valid and, if so, returns the user ID.
 func (s Service) Authenticate(ctx context.Context, accessToken models.AccessToken) (uuid.UUID, error) {
-	t, err := jwt.Parse(string(accessToken), func(t *jwt.Token) (interface{}, error) {
+	t, err := jwt.ParseWithClaims(string(accessToken), &jwt.StandardClaims{}, func(t *jwt.Token) (interface{}, error) {
 		return []byte(s.secret), nil
 	})
 	if err != nil {

@@ -26,6 +26,7 @@ func (s Storage) CreateUser(ctx context.Context, email, passwordHash string) (mo
 		id,
 		email,
 		passwordHash,
+		0,
 		now,
 	)
 	if err != nil {
@@ -44,7 +45,7 @@ func (s Storage) CreateUser(ctx context.Context, email, passwordHash string) (mo
 // GetUserByEmail implements storage.Storage interface.
 func (s Storage) GetUserByEmail(ctx context.Context, email string) (models.User, error) {
 	u := models.User{Email: email}
-	err := s.db.QueryRowContext(ctx, `SELECT (id, password_hash, created_at) FROM users WHERE email=$1 AND deleted_at NOT NULL;`, email).
+	err := s.db.QueryRowContext(ctx, `SELECT (id, password_hash, created_at) FROM users WHERE email=$1 AND deleted_at IS NULL;`, email).
 		Scan(&u.ID, &u.PasswordHash, &u.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -58,7 +59,7 @@ func (s Storage) GetUserByEmail(ctx context.Context, email string) (models.User,
 // GetUserDataVersion implements storage.Storage interface.
 func (s Storage) GetUserDataVersion(ctx context.Context, userID uuid.UUID) (uint64, error) {
 	var dataVersion uint64
-	err := s.db.QueryRowContext(ctx, `SELECT (data_version) FROM users WHERE id=$1 AND deleted_at NOT NULL;`, userID).Scan(&dataVersion)
+	err := s.db.QueryRowContext(ctx, `SELECT (data_version) FROM users WHERE id=$1 AND deleted_at IS NULL;`, userID).Scan(&dataVersion)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return 0, storage.ErrNotFound

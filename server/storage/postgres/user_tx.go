@@ -144,7 +144,7 @@ func (t *UserTransaction) updateText(ctx context.Context, item models.Item, data
 func (t *UserTransaction) updatePassword(ctx context.Context, item models.Item, data models.PasswordData) error {
 	_, err := t.tx.ExecContext(
 		ctx,
-		`UPDATE passwords SET version=$1, meta=$2, deleted_at=$3, ###=$4 WHERE id=$5;`,
+		`UPDATE passwords SET version=$1, meta=$2, deleted_at=$3, password=$4 WHERE id=$5;`,
 		item.Version+1, // This increments the item version!
 		item.Meta,
 		item.DeletedAt,
