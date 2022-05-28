@@ -35,7 +35,7 @@ func (s Service) processUserData(ctx context.Context, userID uuid.UUID, events [
 		return err
 	}
 	// nolint: errcheck
-	defer tx.RollBack()
+	defer tx.Rollback()
 
 	for _, event := range events {
 		switch event.Operation {

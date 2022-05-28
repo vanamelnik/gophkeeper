@@ -21,7 +21,7 @@ type (
 
 	// UserTransaction implements storage.UserTransaction interface.
 	UserTransaction struct {
-		*sql.Tx
+		tx     *sql.Tx
 		userID uuid.UUID
 	}
 )
@@ -61,7 +61,7 @@ func (s Storage) NewUserTransaction(ctx context.Context, userID uuid.UUID) (stor
 	}
 
 	return &UserTransaction{
-		Tx:     tx,
+		tx:     tx,
 		userID: userID,
 	}, nil
 }

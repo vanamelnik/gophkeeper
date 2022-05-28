@@ -54,7 +54,7 @@ type (
 	}
 
 	// UserTransaction is an interface that wraps methods that performs user events committing.
-	// Each transaction must be closed by calling Commit or RollBack method.
+	// Each transaction must be closed by calling Commit or Rollback method.
 	UserTransaction interface {
 		// CreateItem adds a new record in the database.
 		CreateItem(ctx context.Context, item models.Item) error
@@ -62,8 +62,8 @@ type (
 		// UpdateItem updates the record in the database.
 		UpdateItem(ctx context.Context, item models.Item) error
 
-		// RollBack cancels the transaction if it's not closed yet.
-		RollBack() error
+		// Rollback cancels the transaction if it's not closed yet.
+		Rollback() error
 
 		// Commit closes the transaction and commits all changes.
 		// Also it increments DataVersion field of the user.
