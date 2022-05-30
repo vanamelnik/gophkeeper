@@ -98,28 +98,29 @@ func (r *Repo) UpdateItem(item models.Item) error {
 }
 
 // DeleteItem marks the item in local repository as 'deleted' and 'pending'
-func (r *Repo) DeleteItem(itemID uuid.UUID) error {
+func (r *Repo) DeleteItem(itemID uuid.UUID) (models.Item, error) {
 	r.Lock()
 	defer r.Unlock()
 	for i, storedItem := range r.entries {
 		if storedItem.Item.ID == itemID && storedItem.Item.DeletedAt == nil {
 			now := time.Now()
+			deleted := models.Item{
+				ID:        itemID,
+				CreatedAt: storedItem.Item.CreatedAt,
+				DeletedAt: &now,
+				Payload:   nil, // We erase all user data in deleted items,
+				Meta:      "",  // because that's private data.
+			}
 			r.entries[i] = Entry{
-				Item: models.Item{
-					ID:        itemID,
-					CreatedAt: storedItem.Item.CreatedAt,
-					DeletedAt: &now,
-					Payload:   nil, // We erase all user data in deleted items,
-					Meta:      "",  // because that's private data.
-				},
+				Item:    deleted,
 				Pending: true,
 			}
 			r.isChanged = true
-			return nil
+			return deleted, nil
 		}
 	}
 
-	return nil
+	return models.Item{}, ErrNotFound
 }
 
 // GetItemByID fetches the non deleted item with given ID from local repository.

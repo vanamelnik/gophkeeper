@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgconn"
+	"github.com/jackc/pgerrcode"
 	"github.com/vanamelnik/gophkeeper/models"
 	"github.com/vanamelnik/gophkeeper/server/storage"
 )
@@ -30,6 +32,10 @@ func (s Storage) CreateUser(ctx context.Context, email, passwordHash string) (mo
 		now,
 	)
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
+			return models.User{}, storage.ErrAlreadyExists
+		}
 		return models.User{}, err
 	}
 
@@ -45,7 +51,7 @@ func (s Storage) CreateUser(ctx context.Context, email, passwordHash string) (mo
 // GetUserByEmail implements storage.Storage interface.
 func (s Storage) GetUserByEmail(ctx context.Context, email string) (models.User, error) {
 	u := models.User{Email: email}
-	err := s.db.QueryRowContext(ctx, `SELECT (id, password_hash, created_at) FROM users WHERE email=$1 AND deleted_at IS NULL;`, email).
+	err := s.db.QueryRowContext(ctx, `SELECT id, password_hash, created_at FROM users WHERE email=$1 AND deleted_at IS NULL;`, email).
 		Scan(&u.ID, &u.PasswordHash, &u.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -59,7 +65,7 @@ func (s Storage) GetUserByEmail(ctx context.Context, email string) (models.User,
 // GetUserDataVersion implements storage.Storage interface.
 func (s Storage) GetUserDataVersion(ctx context.Context, userID uuid.UUID) (uint64, error) {
 	var dataVersion uint64
-	err := s.db.QueryRowContext(ctx, `SELECT (data_version) FROM users WHERE id=$1 AND deleted_at IS NULL;`, userID).Scan(&dataVersion)
+	err := s.db.QueryRowContext(ctx, `SELECT data_version FROM users WHERE id=$1 AND deleted_at IS NULL;`, userID).Scan(&dataVersion)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return 0, storage.ErrNotFound

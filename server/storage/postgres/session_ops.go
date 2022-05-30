@@ -75,7 +75,7 @@ func (s Storage) GetActiveUserSessions(ctx context.Context, userID uuid.UUID) ([
 	sessions := make([]models.Session, 0)
 	rows, err := s.db.QueryContext(
 		ctx,
-		`SELECT (id, refresh_token, login_at, logout_at)
+		`SELECT id, refresh_token, login_at, logout_at
 		FROM sessions
 		WHERE user_id = $1 AND logout_at IS NULL`,
 		userID,

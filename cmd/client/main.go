@@ -1,9 +1,16 @@
 package main
 
 import (
-	"fmt"
+	"context"
 	"log"
 	"time"
+
+	"github.com/vanamelnik/gophkeeper/client"
+	"github.com/vanamelnik/gophkeeper/client/repo"
+	"github.com/vanamelnik/gophkeeper/client/ui"
+	pb "github.com/vanamelnik/gophkeeper/proto"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 const (
@@ -13,23 +20,23 @@ const (
 )
 
 func main() {
-	// repo := repo.New()
-	// conn, err := grpc.Dial(serverAddr)
-	// must(err)
-	// defer conn.Close()
-	// pbClient := pb.NewGophkeeperClient(conn)
+	ctx := context.Background()
+	repo := repo.New()
+	conn, err := grpc.Dial(serverAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	must(err)
+	defer conn.Close()
+	pbClient := pb.NewGophkeeperClient(conn)
 
-	// if no stored active session
-	//	 sign in / email
+	c := client.New(ctx,
+		pbClient,
+		syncInterval,
+		sendInterval,
+		repo,
+		ui.ResolveConflict)
 
-	// c, err := client.New(context.Background(),
-	// 	pbClient,
-	// 	syncInterval,
-	// 	sendInterval,
-	// 	repo)
-	// user loop
+	userInterface := ui.NewUI(ctx, repo, c, pbClient)
 
-	fmt.Println("GophKeeper client is the cool client for GophKeeper service")
+	userInterface.Run()
 }
 
 func must(err error) {
