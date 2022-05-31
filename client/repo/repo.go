@@ -61,11 +61,11 @@ func (r *Repo) CreateItem(item models.Item) error {
 	if err := models.IsValidItem(item); err != nil {
 		return err
 	}
-	// r.Lock()
-	// defer r.Unlock()
 	if _, err := r.GetItemByID(item.ID); err == nil {
 		return ErrAlreadyExists
 	}
+	r.Lock()
+	defer r.Unlock()
 	r.entries = append(r.entries, Entry{
 		Item:    item,
 		Pending: true,

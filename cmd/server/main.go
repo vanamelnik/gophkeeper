@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net"
 	"os"
@@ -35,7 +36,7 @@ func main() {
 		viper.GetDuration("tokens.refreshTokenDuration"),
 	)
 
-	g := gophkeeper.NewService(s)
+	g := gophkeeper.NewService(context.Background(), s)
 	defer g.Close()
 
 	sigint := make(chan os.Signal, 1)

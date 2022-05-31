@@ -41,9 +41,16 @@ clientLoop:
 			c.eventsPool = append(c.eventsPool, event)
 		case <-timeToSend.C:
 			if err := c.sendEvents(); err != nil {
-				log.Println("client: user relogin needed, session stopped")
-				c.CloseClientSession()
-				continue
+				if errors.Is(err, ErrUnavailable) {
+					log.Println("timeToSend: could not send updates: server is unavailable")
+					continue
+				}
+				if errors.Is(err, ErrReloginNeeded) {
+					log.Println("client: user relogin needed, session stopped")
+					c.CloseClientSession()
+					continue
+				}
+				kkkkkkkkkkk
 			}
 			c.eventsPool = c.eventsPool[:0] // if all events are successfully sent, clear the events pool
 		}
@@ -107,7 +114,7 @@ func (c *Client) whatsNew() (retErr error) {
 	return retErr
 }
 
-// getUpdates fetches updates from the server.
+// getUpdates fetches updates from the server. Returns DataVersion and the set of upgraded items.
 // Multiple connection attempts are made. In case of failure, the error "relogin nedded" returns.
 // Function panics if it could not marshal version map.
 func (c *Client) getUpdates() (uint64, []models.Item, error) {
@@ -146,7 +153,7 @@ func (c *Client) getUpdates() (uint64, []models.Item, error) {
 		}
 		st, _ := status.FromError(err)
 		if st.Code() == codes.Unavailable {
-			continue // Server unavailable - try again, you know it could work...
+			return 0, nil, ErrUnavailable // Server unavailable - try again next time
 		}
 
 		if st.Code() == codes.Unauthenticated {
@@ -207,7 +214,7 @@ func (c *Client) sendEvents() (retErr error) {
 		retErr = err
 		st, _ := status.FromError(err)
 		if st.Code() == codes.Unavailable {
-			continue
+			return ErrUnavailable // server is unavailable - try again next time
 		}
 		if st.Code() == codes.Unauthenticated {
 			if strings.Contains(err.Error(), users.ErrAccessTokenExpired.Error()) {

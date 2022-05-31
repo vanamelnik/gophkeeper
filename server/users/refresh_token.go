@@ -1,6 +1,7 @@
 package users
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -10,9 +11,16 @@ import (
 )
 
 func (s Service) GetSessionID(rt models.RefreshToken) (uuid.UUID, error) {
-	t, _ := jwt.ParseWithClaims(string(rt), &jwt.StandardClaims{}, func(t *jwt.Token) (interface{}, error) {
+	t, err := jwt.ParseWithClaims(string(rt), &jwt.StandardClaims{}, func(t *jwt.Token) (interface{}, error) {
 		return []byte(s.secret), nil
 	})
+	if err != nil {
+		var ve jwt.ValidationError
+		if errors.As(err, &ve) && ve.Errors&jwt.ValidationErrorExpired != 0 {
+			return uuid.Nil, fmt.Errorf("users: getSessionID: %w", ErrAccessTokenExpired)
+		}
+		return uuid.Nil, fmt.Errorf("users: getSessionID: %w", err)
+	}
 	claims, ok := t.Claims.(*jwt.StandardClaims)
 	if !ok {
 		return uuid.Nil, ErrIncorrectRefreshToken

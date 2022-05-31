@@ -21,11 +21,11 @@ func (ui *UserInterface) passwordsView() error {
 			continue
 		}
 
-		fmt.Printf("You have %d passwords in the storage.\n", len(passwords))
+		fmt.Printf("\nYou have %d passwords in the storage.\n", len(passwords))
 		choices := make([]selectItem, len(passwords))
 		for i := range passwords {
 			choices[i] = selectItem{
-				ID: selectID(fmt.Sprint(i)),
+				ID: selectID(fmt.Sprint(i + 1)),
 				Text: fmt.Sprintf("%s\t*****\t%v\t%s",
 					passwords[i].Login, passwords[i].CreatedAt, passwords[i].Notes), // TODO: implement formatted table output
 			}
@@ -36,6 +36,11 @@ func (ui *UserInterface) passwordsView() error {
 		n, err := strconv.Atoi(string(usersChoice))
 		if err != nil {
 			switch usersChoice {
+			case cmdNewItem:
+				if err := ui.newPassword(); err != nil {
+					fmt.Println(err)
+					continue
+				}
 			case cmdBack:
 				return nil
 			}

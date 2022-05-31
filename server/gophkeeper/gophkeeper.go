@@ -13,6 +13,7 @@ import (
 type (
 	// Service represents the main service that implements the business logic of the server.
 	Service struct {
+		ctx     context.Context
 		storage storage.Storage
 
 		eventCh chan eventsPack
@@ -22,7 +23,6 @@ type (
 
 	// eventsPack is the pack of events received from the client.
 	eventsPack struct {
-		ctx    context.Context
 		userID uuid.UUID
 		events []models.Event
 	}
@@ -32,12 +32,13 @@ var (
 	ErrVersionUpToDate = errors.New("data version is up to date")
 )
 
-func NewService(db storage.Storage) Service {
+func NewService(ctx context.Context, db storage.Storage) Service {
 	s := Service{
+		ctx:     ctx,
 		storage: db,
-		wg:      &sync.WaitGroup{},
 		eventCh: make(chan eventsPack, 1),
 		stopCh:  make(chan struct{}),
+		wg:      &sync.WaitGroup{},
 	}
 
 	go s.processor() // TODO: implement a worker pool to limit DB connections
@@ -69,7 +70,6 @@ func (s Service) GetUserData(ctx context.Context, userID uuid.UUID, versionMap m
 func (s Service) PublishUserData(ctx context.Context, userID uuid.UUID, events []models.Event) {
 	s.wg.Add(1)
 	s.eventCh <- eventsPack{
-		ctx:    ctx,
 		userID: userID,
 		events: events,
 	}

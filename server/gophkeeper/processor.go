@@ -17,7 +17,7 @@ processorLoop:
 			break processorLoop // TODO: implement graceful shutdown
 		case p := <-s.eventCh:
 			go func(p eventsPack) {
-				if err := s.processUserData(p.ctx, p.userID, p.events); err != nil {
+				if err := s.processUserData(s.ctx, p.userID, p.events); err != nil {
 					log.Printf("gophkeeper processor: %s", err)
 					return
 				}
