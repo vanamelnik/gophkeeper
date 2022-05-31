@@ -194,11 +194,13 @@ func (c *Client) sendEvents() (retErr error) {
 		}
 		firstTime = false
 
+		log.Printf("sendEvents: %+v", events)
 		_, err := c.pbClient.PublishLocalChanges(c.ctx, &pb.PublishLocalChangesRequest{
 			Token:       &pb.AccessToken{AccessToken: string(c.repo.GetAccessToken())},
 			DataVersion: c.repo.GetDataVersion(),
 			Events:      events,
 		})
+		log.Println("done", err)
 		if err == nil {
 			return nil
 		}

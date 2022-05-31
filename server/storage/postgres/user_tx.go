@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/vanamelnik/gophkeeper/models"
 	"github.com/vanamelnik/gophkeeper/server/storage"
@@ -56,7 +57,10 @@ func (t *UserTransaction) Commit() error {
 		return err
 	}
 
-	return t.tx.Commit()
+	if err := t.tx.Commit(); err != nil {
+		return fmt.Errorf("userTx: %w", err)
+	}
+	return nil
 }
 
 // createText adds a new text item into the texts table. Item version is set to 1.

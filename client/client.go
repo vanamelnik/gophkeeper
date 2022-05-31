@@ -110,7 +110,9 @@ func (c *Client) CloseClientSession() {
 // PublishEvent sends the event to the queue of events waiting to be sent to the server.
 func (c *Client) PublishEvent(event models.Event) {
 	if c.activeSession {
+		log.Printf("publishing an event: %+v", event)
 		c.eventCh <- event
+		log.Println("ok") // FIXME:
 		return
 	}
 
