@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"errors"
+
 	"github.com/vanamelnik/gophkeeper/client"
 )
 
@@ -17,27 +19,31 @@ func (ui *UserInterface) clientSession() error {
 		cmdViewCards     = "3"
 		cmdViewBlobs     = "4"
 	)
-	action := choose("Choose what you want to work with:", []selectItem{
-		{cmdViewPasswords, "Passwords"},
-		{cmdViewTexts, "Text notes"},
-		{cmdViewCards, "Credit cards"},
-		{cmdViewBlobs, "Binary data"},
-		selectItemSeparator,
-		selectItemLogout,
-		selectItemQuit,
-	})
-	switch action {
-	case cmdViewPasswords:
-		if err := ui.passwordsView(); err != nil {
-			return err
+	for {
+		action := choose("Choose what you want to work with:", []selectItem{
+			{cmdViewPasswords, "Passwords"},
+			{cmdViewTexts, "Text notes"},
+			{cmdViewCards, "Credit cards"},
+			{cmdViewBlobs, "Binary data"},
+			selectItemSeparator,
+			selectItemLogout,
+			selectItemQuit,
+		})
+		switch action {
+		case cmdViewPasswords:
+			if err := ui.passwordsView(); err != nil {
+				if errors.Is(err, client.ErrSessionInactive) {
+					aaaaaaaaaaaa
+				}
+			}
+		case cmdViewTexts:
+		case cmdViewCards:
+		case cmdViewBlobs:
+		case cmdLogout:
+			return ui.c.LogOut()
+		case cmdQuit:
 		}
-	case cmdViewTexts:
-	case cmdViewCards:
-	case cmdViewBlobs:
-	case cmdLogout:
-		return ui.c.LogOut()
-	case cmdQuit:
-	}
 
-	return client.ErrReloginNeeded
+		return client.ErrReloginNeeded
+	}
 }

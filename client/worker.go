@@ -30,12 +30,17 @@ clientLoop:
 		case <-whatsNew.C:
 			if err := c.whatsNew(); err != nil {
 				if errors.Is(err, ErrReloginNeeded) {
-					log.Println("client: user relogin needed, session stopped")
+					log.Println("client: watsNew: user relogin needed, session stopped")
 					c.CloseClientSession() // Relogin needed
 					//nolint: errcheck
 					c.LogOut()
 					continue
 				}
+				if errors.Is(err, ErrUnavailable) {
+					continue // If the server is unavailable, try later
+				}
+				log.Printf("client: watsNew: %s", err)
+				continue
 			}
 		case event := <-c.eventCh:
 			c.eventsPool = append(c.eventsPool, event)
@@ -50,7 +55,10 @@ clientLoop:
 					c.CloseClientSession()
 					continue
 				}
-				kkkkkkkkkkk
+				if err != nil {
+					log.Printf("timeToSend: could not send updates: %s", err)
+					continue
+				}
 			}
 			c.eventsPool = c.eventsPool[:0] // if all events are successfully sent, clear the events pool
 		}

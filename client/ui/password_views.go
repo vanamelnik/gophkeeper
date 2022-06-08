@@ -41,6 +41,7 @@ func (ui *UserInterface) passwordsView() error {
 					fmt.Println(err)
 					continue
 				}
+				continue
 			case cmdBack:
 				return nil
 			}
