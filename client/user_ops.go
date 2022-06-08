@@ -37,6 +37,9 @@ func (c *Client) SignUp(email, password string) error {
 		}
 	}
 	// TODO: validate email
+	if email == "" {
+		return errors.New("invalid e-mail address")
+	}
 	if err := validatePassword(password); err != nil {
 		return err
 	}
@@ -68,6 +71,14 @@ func (c *Client) SignUp(email, password string) error {
 // LogIn sends user's email and password to the server to authenticate the user and to create the new user session.
 // The token pair is stored in the local repository.
 func (c *Client) LogIn(email, password string) error {
+	// TODO: validate email
+	if email == "" {
+		return errors.New("invalid e-mail address")
+	}
+	if err := validatePassword(password); err != nil {
+		return err
+	}
+
 	if c.IsLoggedIn() {
 		err := c.LogOut()
 		if err != nil {

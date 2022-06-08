@@ -80,6 +80,7 @@ func (s server) LogOut(ctx context.Context, rt *pb.RefreshToken) (*empty.Empty, 
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
+	log.Printf("api: logOut: session %s ended", sessionID)
 	return &empty.Empty{}, nil
 }
 

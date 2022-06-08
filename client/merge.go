@@ -24,7 +24,7 @@ func (c *Client) processConflictResolving(receivedItem models.Item, err error) {
 	var ce repo.ErrMergeConflict
 	if errors.As(err, &ce) {
 		// ask the user which item he chooses
-		if c.conflictResolveFn(receivedItem, ce.LocalEntry) { // if true - the user chose to merge the received item
+		if c.conflictResolveFn(receivedItem, ce.LocalEntry) == true { // if true - the user chose to merge the received item
 			c.repo.ForceMergeItem(receivedItem)
 			return
 		}

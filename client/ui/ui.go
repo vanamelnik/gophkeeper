@@ -85,10 +85,12 @@ func (ui *UserInterface) Run() {
 		if errors.Is(err, client.ErrSessionInactive) {
 			continue
 		}
+		if errors.Is(err, ErrQuit) {
+			return
+		}
 		if err != nil {
 			log.Println(err)
 		}
-		return
 	}
 }
 
@@ -151,7 +153,6 @@ func getCredentials() (email, password string) {
 	for {
 		fmt.Print("login (e-mail address): ")
 		email = inputWord()
-		// TODO: validate email with regexp
 		fmt.Print("password: ")
 		var err error
 		password, err = inputPassword()
@@ -182,7 +183,7 @@ func choose(message string, choices []selectItem) selectID {
 		fmt.Print(">>")
 		in := inputWord()
 		for _, element := range choices {
-			if in == string(element.ID) {
+			if in == string(element.ID) && in != "" {
 				return element.ID
 			}
 		}
@@ -211,6 +212,7 @@ func inputWord() string {
 }
 
 func ResolveConflict(recievedItem models.Item, localEntry repo.Entry) (userChoseReceivedItem bool) {
+	log.Printf("Resolve conflict:\nreceivedItem: %+v\nlocal item: %+v, pending = %v", recievedItem, localEntry.Item, localEntry.Pending)
 	//TODO: ...
 	return true
 }

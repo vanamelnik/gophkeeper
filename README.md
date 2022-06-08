@@ -98,3 +98,7 @@ In disputable cases, the user is shown the _item_ payload that came with the lat
 
 - if the user selects _item_ data from the server, the _item_ stored locally is replaced.
 - if the user prefers the local _item_, then the _Version_ of the _item_ that came from the server is accepted, but the local _item_ is sent to the server within a new _event_. Thus, the data from the latest Data Version from the server does not conflict with the data stored locally.
+
+## TODOs:
+
+- When the user starts a new session, check if there is an active session of the same user from the same IP address.

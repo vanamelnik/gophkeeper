@@ -17,7 +17,9 @@ func (ui *UserInterface) passwordsView() error {
 			return err
 		}
 		if len(passwords) == 0 {
-			ui.noPasswords()
+			if back := ui.noPasswords(); back {
+				return nil
+			}
 			continue
 		}
 
@@ -46,11 +48,11 @@ func (ui *UserInterface) passwordsView() error {
 				return nil
 			}
 		}
-		ui.workWithPassword(passwords[n])
+		ui.workWithPassword(passwords[n-1])
 	}
 }
 
-func (ui *UserInterface) noPasswords() {
+func (ui *UserInterface) noPasswords() (back bool) {
 	const (
 		cmdNewPassword = "1"
 	)
@@ -60,20 +62,20 @@ func (ui *UserInterface) noPasswords() {
 			selectItemBack,
 		})
 		if choice == cmdBack {
-			return
+			return true
 		}
 		err := ui.newPassword()
 		if err == nil {
+			fmt.Printf("Could not create the password: %s\n", err)
 			return
 		}
-		fmt.Printf("Could not create the password: %s\n", err)
 	}
 }
 
 func (ui UserInterface) newPassword() error {
 	id, err := uuid.NewRandom()
 	if err != nil {
-		return fmt.Errorf("could not generate password id: %w", err)
+		return fmt.Errorf("unreachable: could not generate password id: %w", err)
 	}
 	p := client.Password{
 		ID:        id,
@@ -123,6 +125,7 @@ func (ui *UserInterface) workWithPassword(p client.Password) {
 		case cmdModifyLogin:
 			fmt.Print("Enter new login: ")
 			p.Login = inputWord()
+			isChanged = true
 		case cmdModifyPassword:
 			fmt.Print("Enter new password: ")
 			password, err := enterNewPassword()
@@ -130,9 +133,11 @@ func (ui *UserInterface) workWithPassword(p client.Password) {
 				continue
 			}
 			p.Password = password
+			isChanged = true
 		case cmdModifyNotes:
 			fmt.Print("Enter new notes: ")
-			p.Notes = inputWord()
+			p.Notes = inputString()
+			isChanged = true
 		case cmdDelete:
 			if err := ui.c.DeletePassword(p); err != nil {
 				fmt.Printf("Could not delete the password: %s", err)
@@ -145,6 +150,8 @@ func (ui *UserInterface) workWithPassword(p client.Password) {
 				fmt.Printf("Could not update the password: %s", err)
 				continue
 			}
+			fmt.Println("All changes are saved")
+			return
 		case cmdBack:
 			return
 		}

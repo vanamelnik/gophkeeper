@@ -94,6 +94,9 @@ func (c *Client) NewSession() error {
 	}
 	c.activeSession = true
 	c.stopCh = make(chan struct{})
+	if err := c.whatsNew(); err != nil {
+		log.Printf("client: NewSession: whatsNew: %s", err)
+	}
 	go c.sessionWorker()
 	log.Println("client started")
 	return nil
@@ -110,9 +113,7 @@ func (c *Client) CloseClientSession() {
 // PublishEvent sends the event to the queue of events waiting to be sent to the server.
 func (c *Client) PublishEvent(event models.Event) {
 	if c.activeSession {
-		log.Printf("publishing an event: %+v", event)
 		c.eventCh <- event
-		log.Println("ok") // FIXME:
 		return
 	}
 

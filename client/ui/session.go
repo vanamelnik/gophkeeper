@@ -2,6 +2,7 @@ package ui
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/vanamelnik/gophkeeper/client"
 )
@@ -33,17 +34,20 @@ func (ui *UserInterface) clientSession() error {
 		case cmdViewPasswords:
 			if err := ui.passwordsView(); err != nil {
 				if errors.Is(err, client.ErrSessionInactive) {
-					aaaaaaaaaaaa
+					return client.ErrReloginNeeded
 				}
+				return err
 			}
 		case cmdViewTexts:
 		case cmdViewCards:
 		case cmdViewBlobs:
 		case cmdLogout:
-			return ui.c.LogOut()
+			if err := ui.c.LogOut(); err != nil {
+				fmt.Printf("Error while trying to log out: %s", err)
+			}
+			return nil
 		case cmdQuit:
+			return ErrQuit
 		}
-
-		return client.ErrReloginNeeded
 	}
 }

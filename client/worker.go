@@ -3,6 +3,7 @@ package client
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"math"
 	"strings"
@@ -34,13 +35,13 @@ clientLoop:
 					c.CloseClientSession() // Relogin needed
 					//nolint: errcheck
 					c.LogOut()
-					continue
+					continue clientLoop
 				}
 				if errors.Is(err, ErrUnavailable) {
 					continue // If the server is unavailable, try later
 				}
 				log.Printf("client: watsNew: %s", err)
-				continue
+				continue clientLoop
 			}
 		case event := <-c.eventCh:
 			c.eventsPool = append(c.eventsPool, event)
@@ -48,16 +49,19 @@ clientLoop:
 			if err := c.sendEvents(); err != nil {
 				if errors.Is(err, ErrUnavailable) {
 					log.Println("timeToSend: could not send updates: server is unavailable")
-					continue
+					continue clientLoop
 				}
 				if errors.Is(err, ErrReloginNeeded) {
 					log.Println("client: user relogin needed, session stopped")
 					c.CloseClientSession()
-					continue
+					//nolint: errcheck
+					c.LogOut()
+
+					continue clientLoop
 				}
 				if err != nil {
 					log.Printf("timeToSend: could not send updates: %s", err)
-					continue
+					continue clientLoop
 				}
 			}
 			c.eventsPool = c.eventsPool[:0] // if all events are successfully sent, clear the events pool
@@ -157,6 +161,7 @@ func (c *Client) getUpdates() (uint64, []models.Item, error) {
 				items = append(items, item)
 			}
 
+			fmt.Printf("\n--------\nGot %d updates from the server\n--------\n\n", len(items))
 			return userData.DataVersion, items, nil
 		}
 		st, _ := status.FromError(err)
@@ -209,13 +214,13 @@ func (c *Client) sendEvents() (retErr error) {
 		}
 		firstTime = false
 
-		log.Printf("sendEvents: %+v", events)
+		// log.Printf("sendEvents: %+v", events) // TODO: remove it!
 		_, err := c.pbClient.PublishLocalChanges(c.ctx, &pb.PublishLocalChangesRequest{
 			Token:       &pb.AccessToken{AccessToken: string(c.repo.GetAccessToken())},
 			DataVersion: c.repo.GetDataVersion(),
 			Events:      events,
 		})
-		log.Println("done", err)
+		// log.Println("done", err) // TODO: remove it!
 		if err == nil {
 			return nil
 		}

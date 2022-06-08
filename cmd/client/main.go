@@ -37,6 +37,9 @@ func main() {
 	userInterface := ui.NewUI(ctx, repo, c, pbClient)
 
 	userInterface.Run()
+	if c.IsLoggedIn() {
+		must(c.LogOut()) // TODO: когда будет реализовано сохранение сеанса на диск, то не будет необходимости log out при выходе
+	}
 }
 
 func must(err error) {

@@ -2,7 +2,6 @@ package client
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -59,7 +58,7 @@ func (c *Client) CreatePassword(p Password) error {
 	if err != nil {
 		return err
 	}
-	log.Printf("CreatePassword: %+v", password) // FIXME:
+	// log.Printf("CreatePassword: %+v", password) // FIXME: remove it!
 	if err := c.repo.CreateItem(password); err != nil {
 		return fmt.Errorf("could not store the item to local repository: %w", err)
 	}
